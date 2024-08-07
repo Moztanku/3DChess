@@ -30,3 +30,17 @@
 *.exe
 *.out
 *.app
+
+
+# Build dir
+build/
+
+# External dependencies
+vendor/*
+!vendor/CMakeLists.txt
+
+# Documentation
+docs/
+
+# vscode
+.vscode/
