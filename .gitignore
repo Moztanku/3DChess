@@ -44,3 +44,6 @@ docs/
 
 # vscode
 .vscode/
+
+# .obj models
+!model.obj
