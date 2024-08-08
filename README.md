@@ -1,9 +1,9 @@
 # 3DChess
 
 ### Requirements
-- C++20
-- CMake
-- OpenGL
+- C++20 (tested with Clang 18)
+- CMake (tested with 3.30)
+- OpenGL (4.6)
 - Linux (haven't tried compiling on Windows)
 
 ### How to build
@@ -26,6 +26,7 @@ cmake --build build
 - [GLFW](https://www.glfw.org/)
 - [GLM](https://github.com/g-truc/glm)
 - [STB](https://github.com/nothings/stb)
+- [Assimp](https://assimp.org/)
 
 ### Credits
 - [Low Poly Chess Set](https://sketchfab.com/robie1)

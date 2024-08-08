@@ -12,7 +12,7 @@
 
 namespace Renderer::GPU
 {
-    
+
 template<>
 auto VertexBufferLayout::Push<float>(uint count) -> void
 {
@@ -33,5 +33,5 @@ auto VertexBufferLayout::Push<u_char>(uint count) -> void
     m_Elements.push_back({count, GL_UNSIGNED_BYTE, GL_TRUE});
     m_Stride += count * VertexBufferElement::GetSizeOfType(GL_UNSIGNED_BYTE);
 }
-    
+
 } // namespace Renderer::GPU

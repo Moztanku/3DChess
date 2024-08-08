@@ -1,5 +1,9 @@
 ###### CMakeLists supposed to download external dependencies
 
+##### Remove warnings and keep only optimization flags
+set(CMAKE_CXX_FLAGS_COPY "${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-O3 -w")
+
 #### GLAD
 
 # vendor/GLAD directory
@@ -108,6 +112,37 @@ endif()
 add_library(STB_image INTERFACE)
 target_include_directories(STB_image INTERFACE ${STB_DIR}/inc)
 
+#### Assimp
+
+# vendor/assimp
+set(ASSIMP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/assimp)
+# Link to Assimp 5.4.2 release
+set(ASSIMP_URL "https://github.com/assimp/assimp/archive/refs/tags/v5.4.2.zip")
+
+if(NOT EXISTS ${ASSIMP_DIR})
+    # Download archive and save status
+    file(DOWNLOAD ${ASSIMP_URL} ${VENDOR_DIR}/assimp.zip SHOW_PROGRESS
+        STATUS status)
+
+    list(GET status 0 error_code)
+
+    # Check if download was successful, if not remove the directory and warn the user
+    if(NOT ${error_code} EQUAL 0)
+        file(REMOVE ${VENDOR_DIR}/assimp.zip)
+        message(FATAL_ERROR "Failed to download Assimp, download it from 'https://github.com/assimp/assimp/tree/master') and place it in ${ASSIMP_DIR}")
+    endif()
+
+    # Extract the downloaded archive
+    file(ARCHIVE_EXTRACT
+        INPUT ${VENDOR_DIR}/assimp.zip
+        DESTINATION ${VENDOR_DIR})
+
+    file(RENAME ${VENDOR_DIR}/assimp-5.4.2 ${ASSIMP_DIR})
+    file(REMOVE ${VENDOR_DIR}/assimp.zip)
+endif()
+
+add_subdirectory(${ASSIMP_DIR})
+
 ## JacekLib
 
 # vendor/JacekLib
@@ -128,4 +163,5 @@ endif()
 
 add_subdirectory(${JacekLib_DIR})
 
-####
+##### Restore original flags
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_COPY}")

@@ -44,7 +44,7 @@ class VertexBufferLayout
         template<typename T>
         auto Push(uint /*count*/) -> void
         {
-            assert(false);
+            static_assert(false, "Unsupported type");
         }
 
         [[nodiscard]] inline auto GetElements() const -> const std::vector<VertexBufferElement>& { return m_Elements; }
@@ -54,5 +54,14 @@ class VertexBufferLayout
         std::vector<VertexBufferElement> m_Elements{};
         uint m_Stride{};
 }; // class VertexBufferLayout
+
+template<>
+auto VertexBufferLayout::Push<float>(uint) -> void;
+
+template<>
+auto VertexBufferLayout::Push<uint>(uint) -> void;
+
+template<>
+auto VertexBufferLayout::Push<u_char>(uint) -> void;
 
 } // namespace Renderer::GPU
