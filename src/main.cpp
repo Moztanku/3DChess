@@ -128,11 +128,11 @@ auto main() -> int
 
     glEnable(GL_DEPTH_TEST);
 
-    Renderer::Mesh pawn_mesh{"res/models/pawn/model.obj"};
+    Renderer::Mesh pawn_mesh{"res/models/horse/model.obj"};
     Renderer::GPU::Shader piece_shader{"res/shaders/piece.vert", "res/shaders/piece.frag"};
 
     glm::mat4 model_pawn = glm::mat4(1.0f);
-    constexpr float scale = 16.f;
+    constexpr float scale = 12.f;
     model_pawn = glm::scale(model_pawn, glm::vec3(scale, scale, scale));
 
     while (!glfwWindowShouldClose(window.get()))
@@ -168,7 +168,7 @@ auto main() -> int
 
         piece_shader.Bind();
 
-        piece_shader.SetUniform("uColor", 0.2f, 0.2f, 0.2f);
+        // const float color = sin(glfwGetTime()) / 2.0f + 0.5f;
         piece_shader.SetUniform("uLightDir", 0.0f, 0.0f, 1.0f);
         piece_shader.SetUniform("uLightColor", 1.0f, 1.0f, 1.0f);
 
@@ -179,6 +179,11 @@ auto main() -> int
 
             const float x = i * square + 2 * border;
             const float y = 1 * square + 2 * border;
+
+            if (i%2)
+                piece_shader.SetUniform("uColor", 1.0f, 1.0f, 1.0f);
+            else
+                piece_shader.SetUniform("uColor", 0.25f, 0.25f, 0.25f);
 
             [[maybe_unused]]
             const glm::mat4 new_model = glm::translate(model_pawn, glm::vec3(x, y, 0.f));

@@ -13,7 +13,7 @@ void main()
 {
     vec3 norm = normalize(normal);
 
-    float diff = max(dot(norm, uLightDir), 0.0);
+    float diff = max(dot(norm, uLightDir), 0.0) * 0.7 + 0.3;
 
     vec3 diffuse = diff * uLightColor;
 
