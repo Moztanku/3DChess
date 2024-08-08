@@ -19,12 +19,13 @@ namespace Renderer
 namespace
 {
 
+// This function draws a single quad that covers the whole screen
 auto draw_quad() -> void
 {
     static std::unique_ptr<GPU::VertexBuffer> vbo{nullptr};
     static std::unique_ptr<GPU::VertexArray> vao{nullptr};
 
-    if (!vbo)
+    if (!vbo || !vao)
     {
         constexpr std::array<float, 12> vertices = {
             -1.f, -1.f,
@@ -59,7 +60,7 @@ auto draw_quad() -> void
     glEnable(GL_DEPTH_TEST);
 }
 
-};
+}; // namespace
 
 class Background
 {
