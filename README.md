@@ -13,7 +13,7 @@ git clone https://github.com/Moztanku/3DChess.git
 cd 3DChess
 
 # Create build files and build the project
-cmake -S . -B build
+cmake -S . -B build {-DCMAKE_BUILD_TYPE=Debug/Release}
 cmake --build build
 
 # Run the project
