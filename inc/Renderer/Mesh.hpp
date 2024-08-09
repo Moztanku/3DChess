@@ -28,7 +28,7 @@ class Mesh
 
             const aiScene* scene = importer.ReadFile(
                 model_path.data(), 
-                aiProcess_Triangulate | aiProcess_FlipUVs);
+                aiProcess_Triangulate);
 
             if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
             {

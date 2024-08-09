@@ -34,8 +34,8 @@ set(INC_DIR ${CMAKE_SOURCE_DIR}/inc)
 
 ## External dependencies
 # - GLAD            (OpenGL loader)
-# - glm             (Mathematics)
 # - glfw3           (Window and input)
+# - glm             (Mathematics)
 # - STB_image       (Image loading)
 # - Assimp          (3D model loading)
 # - JacekLib        (My utility library)
@@ -57,10 +57,10 @@ add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE ${SOURCES})
 target_include_directories(${PROJECT_NAME} PRIVATE ${INC_DIR})
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    STB_image
-    glfw
+    OpenGL::GL
     GLAD
+    glfw
     glm
-    GL
+    STB_image
     assimp
     JacekLib)

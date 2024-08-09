@@ -17,11 +17,10 @@ endif()
 
 #### FetchContent
 include(FetchContent)
-# set(FETCHCONTENT_BASE_DIR ${VENDOR_DIR})
 
 #### List of external dependencies with their download links
 set(DEPENDENCIES
-    "GLAD https://gitfront.io/r/Moztanku/8s4L1GHF3Tsc/Resources/raw/glad.zip"
+    "GLAD https://gitfront.io/r/Moztanku/8s4L1GHF3Tsc/Resources/raw/glad-cmake.zip"
     "glm https://github.com/g-truc/glm/archive/refs/tags/1.0.1.zip"
     "GLFW https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.zip"
     "assimp https://github.com/assimp/assimp/archive/refs/tags/v5.4.2.zip"
@@ -36,7 +35,7 @@ set(ASSIMP_BUILD_ASSIMP_TOOLS OFF)
 set(ASSIMP_BUILD_SAMPLES OFF)
 set(DASSIMP_BUILD_LOG OFF)
 
-# Download and make available all dependencies
+#### Download and make available all dependencies
 foreach(DEPENDENCY ${DEPENDENCIES})
     string(REPLACE " " ";" LIST ${DEPENDENCY})
     list(GET LIST 0 dep_name)
@@ -55,11 +54,7 @@ foreach(DEPENDENCY ${DEPENDENCIES})
     )
 endforeach()
 
-#### GLAD
-add_library(GLAD ${glad_SOURCE_DIR}/src/gl.c)
-target_include_directories(GLAD PUBLIC ${glad_SOURCE_DIR}/include)
-
-#### STB_image
+# I only need one header file from STB, so I will download it manually
 # vendor/stb
 set(STB_DIR ${VENDOR_DIR}/stb)
 # Link to STB_image header file from STB repository
