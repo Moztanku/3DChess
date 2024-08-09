@@ -1,107 +1,74 @@
 ###### CMakeLists supposed to download external dependencies
 
 ##### Remove warnings and keep only optimization flags
+
 set(CMAKE_CXX_FLAGS_COPY "${CMAKE_CXX_FLAGS}")
-set(CMAKE_CXX_FLAGS "-O3 -w")
+set(CMAKE_CXX_FLAGS "-w")
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DEBUG_FLAGS}")
+    # Build shared libraries to reduce linking time
+    set(BUILD_SHARED_LIBS ON)
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${RELEASE_FLAGS}")
+    # Build static libraries to improve performance
+    set(BUILD_SHARED_LIBS OFF)
+endif()
+
+#### Set assimp build flags to skip unnecessary features for faster compilation
+set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF)
+set(ASSIMP_BUILD_OBJ_IMPORTER ON)
+set(ASSIMP_NO_EXPORT ON)
+set(ASSIMP_BUILD_TESTS OFF)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF)
+set(ASSIMP_BUILD_SAMPLES OFF)
+set(DASSIMP_BUILD_LOG OFF)
+
+#### FetchContent
+include(FetchContent)
+set(FETCHCONTENT_BASE_DIR ${VENDOR_DIR})
 
 #### GLAD
+FetchContent_Declare(
+    GLAD
+    URL https://gitfront.io/r/Moztanku/8s4L1GHF3Tsc/Resources/raw/glad.zip
+)
+FetchContent_MakeAvailable(GLAD)
 
-# vendor/GLAD directory
-set(GLAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/GLAD)
-# Link to generated GLAD archive, if not available generate through command below.
-set(GLAD_URL "https://gitfront.io/r/Moztanku/8s4L1GHF3Tsc/Resources/raw/glad.zip")
-
-if (NOT EXISTS ${GLAD_DIR})
-    # Download archive and save status
-    file(DOWNLOAD ${GLAD_URL} ${GLAD_DIR}/glad.zip SHOW_PROGRESS
-        STATUS status)
-
-    list(GET status 0 error_code)
-
-    # Check if download was successful, if not remove the directory and warn the user
-    if (NOT ${error_code} EQUAL 0)
-        file(REMOVE_RECURSE ${GLAD_DIR})
-        message(FATAL_ERROR "Failed to download GLAD, generate it through 'https://gen.glad.sh/#generator=c&api=gl%3D4.6&profile=gl%3Dcore%2Cgles1%3Dcommon&options=LOADER' and place it in ${GLAD_DIR}")
-    endif()
-
-    # Extract the downloaded archive
-    file(ARCHIVE_EXTRACT
-        INPUT ${GLAD_DIR}/glad.zip
-        DESTINATION ${GLAD_DIR})
-
-    file(REMOVE ${GLAD_DIR}/glad.zip)
-endif()
-
-add_library(GLAD STATIC ${GLAD_DIR}/src/gl.c)
-target_include_directories(GLAD PUBLIC ${GLAD_DIR}/include)
+add_library(GLAD STATIC ${glad_SOURCE_DIR}/src/gl.c)
+target_include_directories(GLAD PUBLIC ${glad_SOURCE_DIR}/include)
 
 #### glm
-
-# vendor/glm
-set(GLM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glm)
-# Link to GLM 1.0.1 release
-set(GLM_URL "https://github.com/g-truc/glm/archive/refs/tags/1.0.1.zip")
-
-if(NOT EXISTS ${GLM_DIR})
-    # Download archive and save status
-    file(DOWNLOAD ${GLM_URL} ${VENDOR_DIR}/glm.zip SHOW_PROGRESS
-        STATUS status)
-
-    list(GET status 0 error_code)
-
-    # Check if download was successful, if not remove the directory and warn the user
-    if(NOT ${error_code} EQUAL 0)
-        file(REMOVE ${VENDOR_DIR}/glm.zip)
-        message(FATAL_ERROR "Failed to download GLM, download it from 'https://github.com/g-truc/glm' and place it in ${GLM_DIR}")
-    endif()
-
-    # Extract the downloaded archive
-    file(ARCHIVE_EXTRACT
-        INPUT ${VENDOR_DIR}/glm.zip
-        DESTINATION ${VENDOR_DIR})
-
-    
-    file(RENAME ${VENDOR_DIR}/glm-1.0.1 ${GLM_DIR})
-    file(REMOVE ${VENDOR_DIR}/glm.zip)
-endif()
-
-add_subdirectory(${GLM_DIR})
+FetchContent_Declare(
+    glm
+    URL https://github.com/g-truc/glm/archive/refs/tags/1.0.1.zip
+)
+FetchContent_MakeAvailable(glm)
 
 #### glfw3
+FetchContent_Declare(
+    GLFW
+    URL https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.zip
+)
+FetchContent_MakeAvailable(GLFW)
 
-# vendor/glfw
-set(GLFW_DIR ${CMAKE_CURRENT_SOURCE_DIR}/glfw)
-# Link to GLFW 3.4 release
-set(GLFW_URL "https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.zip")
+#### Assimp
+FetchContent_Declare(
+    assimp
+    URL https://github.com/assimp/assimp/archive/refs/tags/v5.4.2.zip
+)
+FetchContent_MakeAvailable(assimp)
 
-if(NOT EXISTS ${GLFW_DIR})
-    # Download archive and save status
-    file(DOWNLOAD ${GLFW_URL} ${VENDOR_DIR}/glfw.zip SHOW_PROGRESS
-        STATUS status)
-
-    list(GET status 0 error_code)
-
-    # Check if download was successful, if not remove the directory and warn the user
-    if(NOT ${error_code} EQUAL 0)
-        file(REMOVE ${VENDOR_DIR}/glfw.zip)
-        message(FATAL_ERROR "Failed to download GLFW, download it from 'https://github.com/glfw/glfw' and place it in ${GLFW_DIR}")
-    endif()
-
-    # Extract the downloaded archive
-    file(ARCHIVE_EXTRACT
-        INPUT ${VENDOR_DIR}/glfw.zip
-        DESTINATION ${VENDOR_DIR})
-
-    file(RENAME ${VENDOR_DIR}/glfw-3.4 ${GLFW_DIR})
-    file(REMOVE ${VENDOR_DIR}/glfw.zip)
-endif()
-
-add_subdirectory(${GLFW_DIR})
+#### JacekLib
+FetchContent_Declare(
+    JacekLib
+    URL http://github.com/Moztanku/JacekLib/archive/main.zip
+)
+FetchContent_MakeAvailable(JacekLib)
 
 #### STB_image
-
 # vendor/stb
-set(STB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/stb)
+set(STB_DIR ${VENDOR_DIR}/stb)
 # Link to STB_image header file from STB repository
 set(STB_IMG_URL "https://raw.githubusercontent.com/nothings/stb/master/stb_image.h")
 
@@ -111,57 +78,6 @@ endif()
 
 add_library(STB_image INTERFACE)
 target_include_directories(STB_image INTERFACE ${STB_DIR}/inc)
-
-#### Assimp
-
-# vendor/assimp
-set(ASSIMP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/assimp)
-# Link to Assimp 5.4.2 release
-set(ASSIMP_URL "https://github.com/assimp/assimp/archive/refs/tags/v5.4.2.zip")
-
-if(NOT EXISTS ${ASSIMP_DIR})
-    # Download archive and save status
-    file(DOWNLOAD ${ASSIMP_URL} ${VENDOR_DIR}/assimp.zip SHOW_PROGRESS
-        STATUS status)
-
-    list(GET status 0 error_code)
-
-    # Check if download was successful, if not remove the directory and warn the user
-    if(NOT ${error_code} EQUAL 0)
-        file(REMOVE ${VENDOR_DIR}/assimp.zip)
-        message(FATAL_ERROR "Failed to download Assimp, download it from 'https://github.com/assimp/assimp/tree/master') and place it in ${ASSIMP_DIR}")
-    endif()
-
-    # Extract the downloaded archive
-    file(ARCHIVE_EXTRACT
-        INPUT ${VENDOR_DIR}/assimp.zip
-        DESTINATION ${VENDOR_DIR})
-
-    file(RENAME ${VENDOR_DIR}/assimp-5.4.2 ${ASSIMP_DIR})
-    file(REMOVE ${VENDOR_DIR}/assimp.zip)
-endif()
-
-add_subdirectory(${ASSIMP_DIR})
-
-## JacekLib
-
-# vendor/JacekLib
-set(JacekLib_DIR ${CMAKE_CURRENT_SOURCE_DIR}/JacekLib)
-# Link to my JacekLib repository
-set(JacekLib_URL "http://github.com/Moztanku/JacekLib/archive/main.zip")
-
-# Download and extract
-if (NOT EXISTS ${JacekLib_DIR})
-    file(DOWNLOAD ${JacekLib_URL} ${VENDOR_DIR}/JacekLib.zip SHOW_PROGRESS)
-    file(ARCHIVE_EXTRACT
-        INPUT ${VENDOR_DIR}/JacekLib.zip
-        DESTINATION ${VENDOR_DIR})
-
-    file(RENAME ${VENDOR_DIR}/JacekLib-main ${JacekLib_DIR})
-    file(REMOVE ${VENDOR_DIR}/JacekLib.zip)
-endif()
-
-add_subdirectory(${JacekLib_DIR})
 
 ##### Restore original flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_COPY}")
