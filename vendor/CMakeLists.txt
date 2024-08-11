@@ -1,7 +1,6 @@
 ###### CMakeLists supposed to download external dependencies
 
 ##### Remove warnings and keep only optimization flags
-
 set(CMAKE_CXX_FLAGS_COPY "${CMAKE_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS "-w")
 

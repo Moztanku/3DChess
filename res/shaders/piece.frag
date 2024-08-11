@@ -4,8 +4,8 @@ in vec3 normal;
 in vec3 fragPos;
 
 uniform vec3 uColor;
-uniform vec3 uLightDir;
-uniform vec3 uLightColor;
+uniform vec3 uLightDir = vec3(0.0, 0.0, 1.0);
+uniform vec3 uLightColor = vec3(1.0, 1.0, 1.0);
 
 out vec4 fragColor;
 
