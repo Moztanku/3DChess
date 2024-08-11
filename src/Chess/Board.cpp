@@ -10,6 +10,8 @@ namespace
     {
         std::unordered_map<Chess::Pos, Chess::Piece*, Chess::PosKeyFuncs> pieces{};
 
+        std::cout << height << " " << width << std::endl;
+
         for (uint y = 0; y < height; y++)
         {
             uint first = layout[y].find_first_not_of(' ');
@@ -18,7 +20,7 @@ namespace
             {
                 if (layout[y][first] == '.')
                 {
-                    first = layout[y].find_first_not_of(' ', first);
+                    first = layout[y].find_first_not_of(' ', first + 1);
                     continue;
                 }
 
@@ -30,7 +32,7 @@ namespace
                 first = layout[y].find_first_not_of(' ', first + 2);
 
                 const Chess::Pos pos{
-                    width - (x + 1), height - (y + 1)};
+                    x, height - (y + 1)};
                 const Chess::Player color =
                     c == 'W' ? Chess::Player::White : Chess::Player::Black;
                 
@@ -161,6 +163,12 @@ Board::Board(const std::string_view layout_file)
                     m_KingBlack = dynamic_cast<King*>(piece);
             }
         }
+    }
+
+    if (!m_KingWhite || !m_KingBlack)
+    {
+        std::cerr << "No kings found" << std::endl;
+        std::exit(EXIT_FAILURE);
     }
 }
 

@@ -177,8 +177,8 @@ Chessboard::Chessboard(uint width, uint height)
 
     add_side(vertices, glm::vec2{32.f, 32.f}, false, {0.f, 0.f, 0.f}, glm::vec2{32.f, 32.f});
     add_side(vertices, glm::vec2{32.f, 32.f}, false, {2 * border_size + width * square_size, 0.f, 0.f}, glm::vec2{32.f, 32.f});
-    add_side(vertices, glm::vec2{32.f, 32.f}, false, {0.f, border_size + width * square_size, 0.f}, glm::vec2{32.f, 32.f});
-    add_side(vertices, glm::vec2{32.f, 32.f}, false, {2 * border_size + width * square_size, border_size + width * square_size, 0.f}, glm::vec2{32.f, 32.f});
+    add_side(vertices, glm::vec2{32.f, 32.f}, false, {0.f, border_size + height * square_size, 0.f}, glm::vec2{32.f, 32.f});
+    add_side(vertices, glm::vec2{32.f, 32.f}, false, {2 * border_size + width * square_size, border_size + height * square_size, 0.f}, glm::vec2{32.f, 32.f});
 
     // Walls
     for (uint x = 0; x < width; x++)
