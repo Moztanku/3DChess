@@ -10,8 +10,6 @@ namespace
     {
         std::unordered_map<Chess::Pos, Chess::Piece*, Chess::PosKeyFuncs> pieces{};
 
-        std::cout << height << " " << width << std::endl;
-
         for (uint y = 0; y < height; y++)
         {
             uint first = layout[y].find_first_not_of(' ');
