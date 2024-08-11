@@ -23,6 +23,8 @@
 #include "Renderer/Camera.hpp"
 #include "Renderer/Mesh.hpp"
 
+#include "Chess/Board.hpp"
+
 auto init_glfw() -> void
 {
     if (!glfwInit())
@@ -119,8 +121,6 @@ auto main() -> int
         
     Renderer::Camera camera{glm::vec3{posX, posY, 300.f}, glm::vec3{0.f, 0.f, -1.f}, glm::vec3{0.f, 1.f, 0.f}};
 
-    chessboard = std::make_unique<Renderer::Chessboard>(w, h);
-
     glfwSetFramebufferSizeCallback(window.get(), [](GLFWwindow* /* window */, int width, int height)
     {
         glViewport(0, 0, width, height);
@@ -134,6 +134,8 @@ auto main() -> int
     glm::mat4 model_pawn = glm::mat4(1.0f);
     constexpr float scale = 12.f;
     model_pawn = glm::scale(model_pawn, glm::vec3(scale, scale, scale));
+
+    Chess::Board board{"res/boards/standard.cfg"};
 
     while (!glfwWindowShouldClose(window.get()))
     {
@@ -164,36 +166,7 @@ auto main() -> int
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         Renderer::Background::render("res/textures/background.jpg");
 
-        chessboard->render(camera.getProjection() * camera.getView() * model);
-
-        piece_shader.Bind();
-
-        // const float color = sin(glfwGetTime()) / 2.0f + 0.5f;
-        piece_shader.SetUniform("uLightDir", 0.0f, 0.0f, 1.0f);
-        piece_shader.SetUniform("uLightColor", 1.0f, 1.0f, 1.0f);
-
-        for (int i = 0; i < w; i++)
-        {
-            constexpr float border = 32.f / (scale);
-            constexpr float square = 64.f / (scale);
-
-            const float x = i * square + 2 * border;
-            const float y = 1 * square + 2 * border;
-
-            if (i%2)
-                piece_shader.SetUniform("uColor", 1.0f, 1.0f, 1.0f);
-            else
-                piece_shader.SetUniform("uColor", 0.25f, 0.25f, 0.25f);
-
-            [[maybe_unused]]
-            const glm::mat4 new_model = glm::translate(model_pawn, glm::vec3(x, y, 0.f));
-            piece_shader.SetUniformM("uModel", new_model);
-            piece_shader.SetUniformM("uMVP", camera.getProjection() * camera.getView() * new_model);
-
-            pawn_mesh.Draw();
-        }
-
-        piece_shader.Unbind();
+        board.draw(camera.getProjection() * camera.getView());
 
         get_errors();
 

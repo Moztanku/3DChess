@@ -19,7 +19,7 @@ namespace Renderer
 class Chessboard
 {
     public:
-        Chessboard(int width, int height);
+        Chessboard(uint width, uint height);
 
         auto render(const glm::mat4& MVP) -> void;
     private:
