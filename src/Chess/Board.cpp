@@ -168,6 +168,18 @@ Board::Board(const std::string_view layout_file)
         std::cerr << "No kings found" << std::endl;
         std::exit(EXIT_FAILURE);
     }
+
+    s_board = this;
+}
+
+auto Board::get_piece(Pos where) const -> const Piece*
+{
+    const auto it = m_pieces.find(where);
+
+    if (it == m_pieces.end())
+        return nullptr;
+
+    return it->second;
 }
 
 auto Board::draw(const glm::mat4& projView) const -> void
@@ -179,5 +191,18 @@ auto Board::draw(const glm::mat4& projView) const -> void
         piece->draw(projView);
     }
 }
+
+auto Board::get_board() -> const Board&
+{
+    if (!s_board)
+    {
+        std::cerr << "Board not initialized!" << std::endl;
+        std::exit(EXIT_FAILURE);
+    }
+
+    return *s_board;
+}
+
+Board* Board::s_board = nullptr;
 
 } // namespace Chess

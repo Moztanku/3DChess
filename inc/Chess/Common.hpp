@@ -7,14 +7,14 @@
 namespace Chess
 {
 
-using Pos = glm::vec<2, uint>;
+using Pos = glm::vec<2, int>;
 
 // Custom hash function for Pos to be used in std::unordered_map
 struct PosKeyFuncs
 {
     auto operator()(const Pos& pos) const -> size_t
     {
-        return std::hash<uint>()(pos.x) ^ std::hash<uint>()(pos.y);
+        return std::hash<int>()(pos.x) ^ std::hash<int>()(pos.y);
     };
 };
 

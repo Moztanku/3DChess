@@ -19,6 +19,11 @@ auto Piece::move(Pos to) -> void
     m_moved = true;
 }
 
+auto Piece::has_moved() const -> bool
+{
+    return m_moved;
+}
+
 auto Piece::get_pos() const -> Pos
 {
     return m_pos;

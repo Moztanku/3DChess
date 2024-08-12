@@ -16,6 +16,7 @@ class Piece
 
         auto move(Pos to) -> void;
 
+        auto has_moved() const -> bool;
         auto get_pos() const -> Pos;
         auto get_color() const -> Player;
         auto draw(const glm::mat4& projView) const -> void;
@@ -94,6 +95,8 @@ class King : public Piece
         auto get_type() const -> std::string override;
     private:
         auto get_mesh() const -> const Renderer::Mesh& override;
+
+        bool m_castle_allowed{true};
 }; // class King
 
 } // namespace Chess
