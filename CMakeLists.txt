@@ -10,10 +10,10 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -pedantic")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
 
-set(DEBUG_FLAGS "-g -O0 -DDEBUG -Wno-unused-parameter")
-set(RELEASE_FLAGS "-Ofast -flto -DNDEBUG")
+set(DEBUG_FLAGS "-Wno-unused-parameter -g -O0 -DDEBUG")
+set(RELEASE_FLAGS "-Werror -Ofast -flto -DNDEBUG")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DEBUG_FLAGS}")
