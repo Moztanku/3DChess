@@ -1,5 +1,7 @@
 #include "Renderer/Camera.hpp"
 
+#include <iostream>
+
 namespace { constexpr bool FREECAM_MODE = true; }
 
 namespace Renderer
@@ -9,8 +11,7 @@ Camera::Camera(vector position, normal forward, normal up) noexcept :
     m_position{position},
     m_forward{forward},
     m_up{up},
-    m_right{glm::normalize(glm::cross(m_forward, m_up))},
-    video_mode{glfwGetVideoMode(glfwGetPrimaryMonitor())}
+    m_right{glm::normalize(glm::cross(m_forward, m_up))}
 {
     glEnable(GL_DEPTH_TEST);
     updateView();
@@ -143,9 +144,12 @@ auto Camera::updateView() noexcept -> void
 
 auto Camera::updateProjection() noexcept -> void
 {
+    int width, height;
+    glfwGetWindowSize(glfwGetCurrentContext(), &width, &height);
+
     m_projection = glm::perspective(
         glm::radians(m_fov),
-        static_cast<float>(video_mode->width) / static_cast<float>(video_mode->height),
+        static_cast<float>(width) / static_cast<float>(height),
         0.5f,
         20000.f
     );

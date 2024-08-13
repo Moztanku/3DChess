@@ -42,6 +42,7 @@ class Camera
         [[nodiscard]] inline auto getView() const noexcept -> const matrix& { return m_view; }
         [[nodiscard]] inline auto getProjection() const noexcept -> const matrix& { return m_projection; }
 
+        [[nodiscard]] inline auto getFov() const noexcept -> angle { return m_fov; }
         [[nodiscard]] inline auto getPosition() const noexcept -> const vector& { return m_position; }
         [[nodiscard]] inline auto getForward() const noexcept -> const normal& { return m_forward; }
         [[nodiscard]] inline auto getUp() const noexcept -> const normal& { return m_up; }
@@ -57,8 +58,6 @@ class Camera
         matrix m_projection{};
 
         angle m_fov = 75.f;
-
-        const GLFWvidmode* video_mode;
 
         auto updateView() noexcept -> void;
         auto updateProjection() noexcept -> void;
