@@ -98,7 +98,7 @@ auto get_errors() -> void
 
     while ((error = glGetError()) != GL_NO_ERROR)
     {
-        std::cerr << "OpenGL Error: " << error << std::endl;
+        std::cerr << "OpenGL Error: " << std::hex << error << std::dec << std::endl;
     }
 
     return;
@@ -107,6 +107,64 @@ auto get_errors() -> void
 int w = 8;
 int h = 8;
 std::unique_ptr<Renderer::Chessboard> chessboard;
+
+auto find_intersection_with_board(
+    const glm::vec3& camera_pos,
+    const glm::vec3& camera_forward,
+    const glm::vec3& camera_up,
+    const glm::vec3& camera_right,
+    const float fov_y,
+    const glm::vec2& mouse_pos) -> glm::vec3
+{
+    int width, height;
+    glfwGetWindowSize(glfwGetCurrentContext(), &width, &height);
+    
+    float aspect_ratio = static_cast<float>(width) / static_cast<float>(height);
+    float fov_x = 2.0f * atan(tan(fov_y / 2.0f) * aspect_ratio);
+
+    const float mouse_x = (mouse_pos.x / width - 0.5f) * 2.0f;
+    const float mouse_y = -(mouse_pos.y / height - 0.5f) * 2.0f;
+
+    glm::vec3 ray = glm::normalize(
+        camera_forward +
+        (mouse_x * tanf(fov_x / 2.0f) * camera_right) +
+        (mouse_y * tanf(fov_y / 2.0f) * camera_up)
+    );
+
+    float t = -camera_pos.z / ray.z;
+
+    glm::vec3 intersection = camera_pos + t * ray;
+
+    return intersection;
+}
+
+auto draw_at(const glm::vec3& pos, const glm::mat4& projView) -> void
+{
+    static Renderer::GPU::Shader piece_shader{
+        "res/shaders/piece.vert",
+        "res/shaders/piece.frag"
+    };
+    static const Renderer::Mesh mesh{
+        "res/models/pawn/model.obj"
+    };
+
+    glm::mat4 model = glm::mat4(1.0f);
+
+    constexpr float scale = 12.f;
+
+    model = glm::scale(model, glm::vec3(scale, scale, scale));
+    model = glm::translate(model, pos / scale);
+
+    piece_shader.Bind();
+
+    piece_shader.SetUniform("uColor", 1.0f, 0.2f, 0.2f);
+    piece_shader.SetUniformM("uModel", model);
+    piece_shader.SetUniformM("uMVP", projView * model);
+
+    mesh.Draw();
+
+    piece_shader.Unbind();
+}
 
 auto main() -> int
 {
@@ -135,7 +193,7 @@ auto main() -> int
     constexpr float scale = 12.f;
     model_pawn = glm::scale(model_pawn, glm::vec3(scale, scale, scale));
 
-    Chess::Board board{"res/boards/standard.cfg"};
+    Chess::Board board{"res/boards/empty.cfg"};
 
     while (!glfwWindowShouldClose(window.get()))
     {
@@ -163,10 +221,39 @@ auto main() -> int
         if (glfwGetKey(window.get(), GLFW_KEY_RIGHT) == GLFW_PRESS)
             camera.roll(-0.1f);
 
+        //
+        double posX, posY;
+        glfwGetCursorPos(window.get(), &posX, &posY);
+        
+        glm::vec3 intersection = find_intersection_with_board(
+            camera.getPosition(),
+            camera.getForward(),
+            camera.getUp(),
+            camera.getRight(),
+            glm::radians(camera.getFov()),
+            {posX, posY}
+        );
+        std::cout << intersection.x << " " << intersection.y << " " << intersection.z << std::endl;
+        Chess::Pos piece_pos = 
+        {
+            std::floorf((intersection.x - 32.f) / 64.f),
+            std::floorf((intersection.y - 32.f) / 64.f)
+        };
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         Renderer::Background::render("res/textures/background.jpg");
 
         board.draw(camera.getProjection() * camera.getView());
+
+        if (piece_pos.x >= 0 && piece_pos.x < 8 && piece_pos.y >= 0 && piece_pos.y < 8)
+        draw_at(
+            glm::vec3{
+                piece_pos.x * 64.f + 64.f,
+                piece_pos.y * 64.f + 64.f,
+                0.f
+            },
+            camera.getProjection() * camera.getView()
+        );
 
         get_errors();
 
