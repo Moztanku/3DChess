@@ -2,76 +2,63 @@
 
 #include <fstream>
 
+#include <glm/gtc/matrix_transform.hpp>
+
+#include "Renderer/Mesh.hpp"
+
 namespace
 {
-    auto parse_layout(const std::vector<std::string>& layout,
-        const uint width,
-        const uint height) -> std::unordered_map<Chess::Pos, Chess::Piece*, Chess::PosKeyFuncs>
+
+auto parse_layout(const std::vector<std::string>& layout,
+    const uint width,
+    const uint height,
+    Chess::Board::PieceMap& piece_map) -> void
+{
+    for (uint y = 0; y < height; y++)
     {
-        std::unordered_map<Chess::Pos, Chess::Piece*, Chess::PosKeyFuncs> pieces{};
+        uint first = layout[y].find_first_not_of(' ');
 
-        for (uint y = 0; y < height; y++)
+        for (uint x = 0; x < width; x++)
         {
-            uint first = layout[y].find_first_not_of(' ');
-
-            for (uint x = 0; x < width; x++)
+            if (layout[y][first] == '.')
             {
-                if (layout[y][first] == '.')
-                {
-                    first = layout[y].find_first_not_of(' ', first + 1);
-                    continue;
-                }
-
-                // color
-                const char c = layout[y][first];
-                // piece type
-                const char p = layout[y][first + 1];
-
-                first = layout[y].find_first_not_of(' ', first + 2);
-
-                const Chess::Pos pos{
-                    x, height - (y + 1)};
-                const Chess::Player color =
-                    c == 'W' ? Chess::Player::White : Chess::Player::Black;
-                
-                Chess::Piece* piece = nullptr;
-
-                if (p == '0')
-                    piece = new Chess::Pawn{pos, color};
-                else if (p == '1')
-                    piece = new Chess::Bishop{pos, color};
-                else if (p == '2')
-                    piece = new Chess::Knight{pos, color};
-                else if (p == '3')
-                    piece = new Chess::Rook{pos, color};
-                else if (p == '4')
-                    piece = new Chess::Queen{pos, color};
-                else if (p == '5')
-                    piece = new Chess::King{pos, color};
-                else
-                {
-                    std::cerr << "Unknown piece type: " << p << std::endl;
-                    std::exit(EXIT_FAILURE);
-                }
-
-                pieces[pos] = piece;
+                first = layout[y].find_first_not_of(' ', first + 1);
+                continue;
             }
+
+            // color
+            const char c = layout[y][first];
+            // piece type
+            const char p = layout[y][first + 1];
+
+            first = layout[y].find_first_not_of(' ', first + 2);
+
+            const Chess::Pos pos{
+                x, height - (y + 1)};
+            const Chess::Player color =
+                c == 'W' ? Chess::Player::White : Chess::Player::Black;
+                
+            Chess::Piece piece{
+                    .color = color,
+                    .type = static_cast<Chess::Piece::Type>(p - '0')};
+
+            piece_map[pos] = piece;
         }
-
-        return pieces;
     }
-} // namespace
+}
 
-namespace Chess
+auto parse_config(
+    const std::string_view config_file,
+    uint& width,
+    uint& height,
+    Chess::Player& starting_player,
+    Chess::Board::PieceMap& piece_map) -> void
 {
-
-Board::Board(const std::string_view layout_file)
-{
-    std::fstream file{layout_file.data(), std::ios::in};
+    std::fstream file{config_file.data(), std::ios::in};
 
     if (!file.is_open())
     {
-        std::cerr << "Failed to open file " << layout_file << std::endl;
+        std::cerr << "Failed to open file " << config_file << std::endl;
         std::exit(EXIT_FAILURE);
     }
 
@@ -102,27 +89,29 @@ Board::Board(const std::string_view layout_file)
         // Parse the words
         if (words[0] == "size")
         {
-            m_width = std::stol(std::string{words[1]});
-            m_height = std::stol(std::string{words[2]});
-
-            m_chessboard = new Renderer::Chessboard{m_width, m_height};
+            width = std::stol(std::string{words[1]});
+            height = std::stol(std::string{words[2]});
         }
         else if (words[0] == "player")
         {
-            // TODO
+            starting_player = words[1] == "white" ? Chess::Player::White : Chess::Player::Black;
         }
         else if (words[0] == "layout")
         {
             std::vector<std::string> layout{};
 
-            for (size_t i = 0; i < m_height; i++)
+            for (size_t i = 0; i < height; i++)
             {
                 std::getline(file, line);
 
                 layout.push_back(line);
             }
 
-            m_pieces = parse_layout(layout, m_width, m_height);
+            parse_layout(
+                layout,
+                width,
+                height,
+                piece_map);
 
             break;
         }
@@ -134,75 +123,459 @@ Board::Board(const std::string_view layout_file)
     }
 
     file.close();
+}
 
-    // Find the kings
-    for (const auto& [pos, piece] : m_pieces)
+auto find_king(const Chess::Board::PieceMap& pieces, const Chess::Player color) -> Chess::Pos
+{
+    Chess::Pos king_pos{-1, -1};
+
+    for (const auto& [pos, piece] : pieces)
     {
-        if (piece->get_type() == "King")
+        if (piece.type == Chess::Piece::Type::King && piece.color == color)
         {
-            if (piece->get_color() == Player::White)
-            {
-                if (m_KingWhite)
-                {
-                    std::cerr << "Multiple white kings found" << std::endl;
-                    std::exit(EXIT_FAILURE);
-                }
-                else
-                    m_KingWhite = dynamic_cast<King*>(piece);
-            }
+            if (king_pos == Chess::Pos{-1, -1})
+                king_pos = pos;
             else
             {
-                if (m_KingBlack)
-                {
-                    std::cerr << "Multiple black kings found" << std::endl;
-                    std::exit(EXIT_FAILURE);
-                }
-                else
-                    m_KingBlack = dynamic_cast<King*>(piece);
+                std::cerr << "Multiple kings found for color " << static_cast<int>(color) << std::endl;
+                std::exit(EXIT_FAILURE);
             }
         }
     }
 
-    if (!m_KingWhite || !m_KingBlack)
+    if (king_pos == Chess::Pos{-1, -1})
     {
-        std::cerr << "No kings found" << std::endl;
+        std::cerr << "No king found for color " << static_cast<int>(color) << std::endl;
         std::exit(EXIT_FAILURE);
     }
 
-    s_board = this;
+    return king_pos;
 }
 
-auto Board::get_piece(Pos where) const -> const Piece*
+auto find_piece(const Chess::Board::PieceMap& pieces, const Chess::Pos pos) -> std::optional<Chess::Piece>
 {
-    const auto it = m_pieces.find(where);
+    auto it = pieces.find(pos);
 
-    if (it == m_pieces.end())
-        return nullptr;
+    if (it == pieces.end())
+        return std::nullopt;
 
     return it->second;
 }
 
-auto Board::draw(const glm::mat4& projView) const -> void
+template <typename T>
+auto append_data(std::vector<std::byte>& data, const T& value) -> void
 {
-    m_chessboard->render(projView);
+    const std::byte* bytes = reinterpret_cast<const std::byte*>(&value);
 
+    data.insert(data.end(), bytes, bytes + sizeof(T));
+}
+
+} // namespace
+
+namespace Chess
+{
+
+// Public
+
+Board::Board(const std::string_view config_file)
+{
+    parse_config(config_file, m_width, m_height, m_starting_player, m_pieces);
+
+    m_KingWhitePos = find_king(m_pieces, Player::White);
+    m_KingBlackPos = find_king(m_pieces, Player::Black);
+
+    update();
+}
+
+auto Board::get_size() const -> Pos
+{
+    return Pos{m_width, m_height};
+}
+
+auto Board::get_pieces() const -> const PieceMap&
+{
+    return m_pieces;
+}
+
+auto Board::get_king_pos(const Player color) const -> Pos
+{
+    return color == Player::White ? m_KingWhitePos : m_KingBlackPos;
+}
+
+auto Board::get_current_turn() const -> Player
+{
+    if (m_move_history.empty())
+        return m_starting_player;
+    
+    return !m_move_history.back().player;
+}
+
+auto Board::get_possible_moves(const Pos from) const -> std::vector<Move>
+{
+    auto piece = find_piece(m_pieces, from);
+
+    if (piece == std::nullopt)
+        return {};
+
+    if (piece->color != get_current_turn())
+        return {};
+
+    std::vector<Move> moves;
+
+    for (const auto& to : m_possible_moves.at(from))
+        moves.push_back(
+            create_move(from, to)
+        );
+
+    return moves;
+}
+
+
+auto Board::get_pieces_atacking_pos(const Pos pos, const Player color, std::vector<Pos>& attackers) const -> void
+{
+    for (const auto& [piece_pos, piece] : m_pieces)
+    {
+        if (piece.color != color)
+            continue;
+
+        const auto moves = get_moves(piece_pos);
+
+        if (std::find(moves.begin(), moves.end(), pos) != moves.end())
+            attackers.push_back(piece_pos);
+    }
+}
+
+auto Board::check_if_attacking_pos(const Pos pos, const Player color) const -> bool
+{
+    for (const auto& [piece_pos, piece] : m_pieces)
+    {
+        if (piece.color != color)
+            continue;
+
+        const auto moves = get_moves(piece_pos);
+
+        if (std::find(moves.begin(), moves.end(), pos) != moves.end())
+            return true;
+    }
+
+    return false;
+}
+
+auto Board::execute_move(const Move& move) -> void
+{
+
+    execute(move);
+    update();
+}
+
+auto Board::undo_move() -> Move
+{
+    auto move = undo();
+    update();
+
+    return move;
+}
+
+auto Board::get_current_game_state() const -> Controller::GameState
+{
+    if (m_move_history.empty())
+        return Controller::GameState::Playing;
+
+    const auto& last_move = m_move_history.back();
+
+    if (last_move.is_type(Move::Type::Checkmate))
+        return last_move.player == Player::White ?
+            Controller::GameState::WhiteWin : Controller::GameState::BlackWin;
+
+    if (last_move.is_type(Move::Type::Stalemate))
+        return Controller::GameState::Draw;
+
+    return Controller::GameState::Playing;
+}
+
+auto Board::reset() -> void
+{
+    while(!m_move_history.empty())
+        undo();
+
+    update();
+}
+
+// Private
+
+auto Board::update() -> void
+{
+    if (m_move_history.empty())
+        return calculate_possible_moves_initial();
+
+    calculate_possible_moves(m_move_history.back());
+
+    auto& last_move = m_move_history.back();
+
+    const std::vector<Pos>& moves = m_possible_moves.at(last_move.to);
+
+    // Add info about check to the move
+    if (std::find(moves.begin(), moves.end(),
+        get_king_pos(!last_move.player)) != moves.end())
+    {
+        last_move.type |= static_cast<uint>(Move::Type::Check);
+    }
+
+    // Add info about checkmate/stalemate to the move
+    Player current = get_current_turn();
+    bool no_moves = true;
+
+    for (const auto& [pos, moves] : m_possible_moves)
+        if (m_pieces.at(pos).color == current && !moves.empty())
+        {
+            no_moves = false;
+            break;
+        }
+
+    if (no_moves)
+    {
+        if (last_move.is_type(Move::Type::Check))
+            last_move.type |= static_cast<uint>(Move::Type::Checkmate);
+        else
+            last_move.type |= static_cast<uint>(Move::Type::Stalemate);
+    }
+}
+
+auto Board::execute(const Move& move) -> void
+{
+    m_move_history.push_back(move);
+
+    m_pieces[move.to] = m_pieces[move.from];
+    m_pieces[move.to].moved = true;
+
+    if (m_pieces[move.to].type == Piece::Type::King)
+    {
+        if (m_pieces[move.to].color == Player::White)
+            m_KingWhitePos = move.to;
+        else
+            m_KingBlackPos = move.to;
+    }
+
+    m_pieces.erase(move.from);
+
+    auto it = move.special_move_info.data();
+
+    if (move.is_type(Move::Type::Capture))
+    {
+        const Pos cap_pos = *reinterpret_cast<const Pos*>(it);
+        it += sizeof(cap_pos);
+
+        const Piece cap_piece = *reinterpret_cast<const Piece*>(it);
+        it += sizeof(cap_piece);
+
+        if (cap_pos != move.to)
+            m_pieces.erase(cap_pos);
+    }
+
+    if (move.is_type(Move::Type::Promotion))
+    {
+        const Piece::Type promoted = *reinterpret_cast<const Piece::Type*>(it);
+        it += sizeof(promoted);
+
+        m_pieces[move.to].type = promoted;
+    }
+
+    if (move.is_type(Move::Type::Castling))
+    {
+        const Pos rook_from = *reinterpret_cast<const Pos*>(it);
+        it += sizeof(rook_from);
+
+        const Pos rook_to = *reinterpret_cast<const Pos*>(it);
+        it += sizeof(rook_to);
+
+        m_pieces[rook_to] = m_pieces[rook_from];
+        m_pieces[rook_to].moved = true;
+
+        m_pieces.erase(rook_from);
+    }
+}
+
+auto Board::undo() -> Move
+{
+    if (m_move_history.empty())
+    {
+        std::cerr << "No moves to undo!" << std::endl;
+        return Move{};
+    }
+
+    const Move move = m_move_history.back();
+    m_move_history.pop_back();
+
+    m_pieces[move.from] = m_pieces[move.to];
+    m_pieces.erase(move.to);
+
+    if (m_pieces[move.from].type == Piece::Type::King)
+    {
+        if (m_pieces[move.from].color == Player::White)
+            m_KingWhitePos = move.from;
+        else
+            m_KingBlackPos = move.from;
+    }
+
+    auto it = move.special_move_info.data();
+
+    if (move.is_type(Move::Type::Capture))
+    {
+        const Pos cap_pos = *reinterpret_cast<const Pos*>(it);
+        it += sizeof(cap_pos);
+
+        const Piece cap_piece = *reinterpret_cast<const Piece*>(it);
+        it += sizeof(cap_piece);
+
+        m_pieces[cap_pos] = cap_piece;
+    }
+
+    if (move.is_type(Move::Type::Promotion))
+    {
+        m_pieces[move.from].type = Piece::Type::Pawn;
+    }
+
+    if (move.is_type(Move::Type::Castling))
+    {
+        const Pos rook_from = *reinterpret_cast<const Pos*>(it);
+        it += sizeof(rook_from);
+
+        const Pos rook_to = *reinterpret_cast<const Pos*>(it);
+        it += sizeof(rook_to);
+
+        m_pieces[rook_from] = m_pieces[rook_to];
+        m_pieces[rook_from].moved = false;
+
+        // Check in case if kings initial position is 1 square away from rook
+        if (rook_to != move.from)
+            m_pieces.erase(rook_to);
+    }
+
+    if (move.is_type(Move::Type::FirstMove))
+    {
+        m_pieces[move.from].moved = false;
+    }
+
+    return move;
+}
+
+auto Board::create_move(const Pos from, const Pos to, const std::optional<Piece::Type> promotion) const -> Move
+{
+    if (m_pieces.find(from) == m_pieces.end())
+        return Move{};
+
+    const Piece piece = m_pieces.at(from);
+
+    uint8_t type {static_cast<uint8_t>(Move::Type::Empty)};
+    Move::SpecialMoveInfo sm_info{};
+
+    auto captured = find_piece(m_pieces, to);
+
+    // En passant
+    if (piece.type == Piece::Type::Pawn && captured == std::nullopt && to.x != from.x)
+    {
+        type |= static_cast<uint>(Move::Type::EnPassant);
+
+        captured = find_piece(m_pieces, Pos{to.x, from.y});
+    }
+
+    // Capture
+    if (captured != std::nullopt)
+    {
+        type |= static_cast<uint>(Move::Type::Capture);
+
+        if (type & static_cast<uint>(Move::Type::EnPassant))
+            append_data(sm_info, Pos{to.x, from.y});
+        else
+            append_data(sm_info, to);
+                    
+        append_data(sm_info, captured.value());
+    }
+
+    // Promotion
+    if (piece.type == Piece::Type::Pawn)
+    {
+        if ((piece.color == Player::White && to.y == get_size().y - 1) || (piece.color == Player::Black && to.y == 0))
+        {
+            type |= static_cast<uint>(Move::Type::Promotion);
+
+            append_data(sm_info, static_cast<Piece::Type>(promotion.value_or(Piece::Type::Queen)));
+        }
+    }
+
+    // Castling
+    if (piece.type == Piece::Type::King)
+    {
+        if (std::abs(from.x - to.x) == 2)
+        {
+            type |= static_cast<uint>(Move::Type::Castling);
+
+            const int dir = to.x - from.x > 0 ? 1 : -1;
+
+            Pos rook_to = to - Pos{dir, 0};
+            Pos rook_from = to;
+
+            while(find_piece(m_pieces, rook_from) == std::nullopt)
+                rook_from += Pos{dir, 0};
+
+            append_data(sm_info, rook_from);
+            append_data(sm_info, rook_to);
+        }
+    }
+
+    // First move
+    if (!piece.moved)
+    {
+        type |= static_cast<uint>(Move::Type::FirstMove);
+    }
+
+    return Move{
+        .player = piece.color,
+        .from = from,
+        .to = to,
+        .piece = piece.type,
+        .type = type,
+        .special_move_info = sm_info
+    };
+}
+
+auto Board::calculate_possible_moves(const Move& /* move */) -> void
+{
+    // TODO: Only update the moves that are affected by the last move
+    calculate_possible_moves_initial();
+}
+
+auto Board::calculate_possible_moves_initial() -> void
+{
+    m_possible_moves.clear();
+
+    // Get all moves a piece can make
     for (const auto& [pos, piece] : m_pieces)
+        m_possible_moves[pos] = get_moves(pos);
+
+    // Filter out moves that would put the king in check
+    for (auto& [pos, moves] : m_possible_moves)
     {
-        piece->draw(projView);
+        const Piece piece = m_pieces.at(pos);
+
+        auto it = moves.begin();
+
+        while (it != moves.end())
+        {
+            const Move move = create_move(pos, *it);
+
+            execute(move);
+
+            const Pos king_pos = get_king_pos(piece.color);
+
+            if (check_if_attacking_pos(king_pos, !piece.color))
+                it = moves.erase(it);
+            else
+                ++it;
+
+            undo();
+        }
     }
 }
-
-auto Board::get_board() -> const Board&
-{
-    if (!s_board)
-    {
-        std::cerr << "Board not initialized!" << std::endl;
-        std::exit(EXIT_FAILURE);
-    }
-
-    return *s_board;
-}
-
-Board* Board::s_board = nullptr;
 
 } // namespace Chess

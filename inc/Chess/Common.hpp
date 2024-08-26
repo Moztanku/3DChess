@@ -9,6 +9,13 @@ namespace Chess
 
 using Pos = glm::vec<2, int>;
 
+// Check if a position is within given bounds
+constexpr auto in_bounds(const Chess::Pos pos, const Chess::Pos bounds) -> bool
+{
+    return pos.x >= 0 && pos.x < bounds.x
+        && pos.y >= 0 && pos.y < bounds.y;
+}
+
 // Custom hash function for Pos to be used in std::unordered_map
 struct PosKeyFuncs
 {
@@ -18,10 +25,15 @@ struct PosKeyFuncs
     };
 };
 
-enum class Player
+enum class Player : uint8_t
 {
-    White,
-    Black
+    White = 0,
+    Black = 1
 };
+
+constexpr auto operator!(const Player player) -> Player
+{
+    return player == Player::White ? Player::Black : Player::White;
+}
 
 }; // namespace Chess

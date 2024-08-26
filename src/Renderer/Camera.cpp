@@ -144,6 +144,7 @@ auto Camera::updateView() noexcept -> void
 
 auto Camera::updateProjection() noexcept -> void
 {
+    // TODO: need to call it on window resize
     int width, height;
     glfwGetWindowSize(glfwGetCurrentContext(), &width, &height);
 

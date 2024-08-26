@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <memory>
 
 #include <glad/gl.h>
@@ -13,13 +12,15 @@
 #include "Renderer/GPU/VertexBuffer.hpp"
 #include "Renderer/GPU/VertexBufferLayout.hpp"
 
+#include "Chess/Common.hpp"
+
 namespace Renderer
 {
 
 class Chessboard
 {
     public:
-        Chessboard(uint width, uint height);
+        Chessboard(Chess::Pos size);
 
         auto render(const glm::mat4& MVP) -> void;
     private:

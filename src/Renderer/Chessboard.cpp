@@ -1,5 +1,7 @@
 #include "Renderer/Chessboard.hpp"
 
+#include "Common.hpp"
+
 namespace
 {
 
@@ -16,8 +18,11 @@ constexpr auto add_vertex(std::vector<float>& vs, glm::vec3 pos, glm::vec2 tex) 
 // Creates a quad with the given size, at the given position, and with given texture position
 auto add_cell(std::vector<float>& vs, glm::vec2 size, glm::vec3 pos_shift, glm::vec2 tex_shift) -> void
 {
-    constexpr float tex_w = 192.f;
-    constexpr float tex_h = 128.f;
+    constexpr float sq = square_size;
+    constexpr float bo = border_size;
+    
+    constexpr float tex_w = 2 * sq + 2 * bo;
+    constexpr float tex_h = sq + 2 * bo;
 
     const auto x = size.x;
     const auto y = size.y;
@@ -56,8 +61,11 @@ auto add_cell(std::vector<float>& vs, glm::vec2 size, glm::vec3 pos_shift, glm::
 // Creates a side that is perpendicular to the x or y axis
 auto add_side(std::vector<float>& vs, glm::vec2 size, bool xaxis, glm::vec3 pos_shift, glm::vec2 tex_shift)
 {
-    constexpr float tex_w = 192.f;
-    constexpr float tex_h = 128.f;
+    constexpr float sq = square_size;
+    constexpr float bo = border_size;
+    
+    constexpr float tex_w = 2 * sq + 2 * bo;
+    constexpr float tex_h = sq + 2 * bo;
 
     const auto x = size.x;
     const auto y = size.y;
@@ -101,10 +109,13 @@ namespace Renderer
 {
 
 // Creates a chessboard 3D model with the given width and height (in squares)
-Chessboard::Chessboard(uint width, uint height)
+Chessboard::Chessboard(Chess::Pos size)
 {
-    constexpr float border_size = 32.f;
-    constexpr float square_size = 64.f;
+    constexpr float sq = square_size;
+    constexpr float bo = border_size;
+
+    const int width = size.x;
+    const int height = size.y;
 
     std::vector<float> vertices;
 
@@ -115,82 +126,82 @@ Chessboard::Chessboard(uint width, uint height)
 
     // Corners
     add_cell(vertices,
-        glm::vec2{32.f, 32.f},
+        glm::vec2{bo, bo},
         glm::vec3{0.f, 0.f, 0.f},
         glm::vec2{0.f, 0.f}); // Bottom left
     add_cell(vertices, 
-        glm::vec2{32.f, 32.f},
-        glm::vec3{border_size + width * square_size, 0.f, 0.f},
-        glm::vec2{96.f, 0.f}); // Bottom right
+        glm::vec2{bo, bo},
+        glm::vec3{bo + width * sq, 0.f, 0.f},
+        glm::vec2{sq + bo, 0.f}); // Bottom right
     add_cell(vertices, 
-        glm::vec2{32.f, 32.f},
-        glm::vec3{0.f, border_size + height * square_size, 0.f},
-        glm::vec2{0.f, 96.f}); // Top left
+        glm::vec2{bo, bo},
+        glm::vec3{0.f, bo + height * sq, 0.f},
+        glm::vec2{0.f, sq + bo}); // Top left
     add_cell(vertices, 
-        glm::vec2{32.f, 32.f},
-        glm::vec3{border_size + width * square_size, border_size + height * square_size, 0.f},
-        glm::vec2{96.f, 96.f}); // Top right
+        glm::vec2{bo, bo},
+        glm::vec3{bo + width * sq, bo + height * sq, 0.f},
+        glm::vec2{sq + bo, sq + bo}); // Top right
 
     // Bottom border
-    for (uint x = 0; x < width; x++)
+    for (int x = 0; x < width; x++)
         add_cell(vertices,
-            glm::vec2{64.f, 32.f},
-            glm::vec3{border_size + x * square_size, 0.f, 0.f},
-            glm::vec2{32.f, 0.f});
+            glm::vec2{sq, bo},
+            glm::vec3{bo + x * sq, 0.f, 0.f},
+            glm::vec2{bo, 0.f});
     // Top border
-    for (uint x = 0; x < width; x++)
+    for (int x = 0; x < width; x++)
         add_cell(vertices,
-            glm::vec2{64.f, 32.f},
-            glm::vec3{border_size + x * square_size, border_size + height * square_size, 0.f},
-            glm::vec2{32.f, 96.f});
+            glm::vec2{sq, bo},
+            glm::vec3{bo + x * sq, bo + height * sq, 0.f},
+            glm::vec2{bo, sq + bo});
     // Left border
-    for (uint y = 0; y < height; y++)
+    for (int y = 0; y < height; y++)
         add_cell(vertices,
-            glm::vec2{32.f, 64.f},
-            glm::vec3{0.f, border_size + y * square_size, 0.f},
-            glm::vec2{0.f, 32.f});
+            glm::vec2{bo, sq},
+            glm::vec3{0.f, bo + y * sq, 0.f},
+            glm::vec2{0.f, bo});
     // Right border
-    for (uint y = 0; y < height; y++)
+    for (int y = 0; y < height; y++)
         add_cell(vertices,
-            glm::vec2{32.f, 64.f},
-            glm::vec3{border_size + width * square_size, border_size + y * square_size, 0.f},
-            glm::vec2{96.f, 32.f});
+            glm::vec2{bo, sq},
+            glm::vec3{bo + width * sq, bo + y * sq, 0.f},
+            glm::vec2{sq + bo, bo});
 
     // Middle
-    for (uint y = 0; y < height; y++)
-    for (uint x = 0; x < width; x++)
+    for (int y = 0; y < height; y++)
+    for (int x = 0; x < width; x++)
     {
         const bool is_white = (x + y) % 2 == 1;
 
         add_cell(vertices,
-            glm::vec2{64.f, 64.f},
-            glm::vec3{border_size + x * square_size, border_size + y * square_size, 0.f},
-            is_white ? glm::vec2{128.f, 64.f} : glm::vec2{128.f, 0.f});
+            glm::vec2{sq, sq},
+            glm::vec3{bo + x * sq, bo + y * sq, 0.f},
+            is_white ? glm::vec2{sq + 2*bo, sq} : glm::vec2{sq + 2*bo, 0.f});
     }
 
     //// Sides
     // Corners
-    add_side(vertices, glm::vec2{32.f, 32.f}, true, {0.f, 0.f, 0.f}, glm::vec2{32.f, 32.f});
-    add_side(vertices, glm::vec2{32.f, 32.f}, true, {border_size + width * square_size, 0.f, 0.f}, glm::vec2{32.f, 32.f});
-    add_side(vertices, glm::vec2{32.f, 32.f}, true, {0.f, 2 * border_size + height * square_size, 0.f}, glm::vec2{32.f, 32.f});
-    add_side(vertices, glm::vec2{32.f, 32.f}, true, {border_size + width * square_size, 2 * border_size + height * square_size, 0.f}, glm::vec2{32.f, 32.f});
+    add_side(vertices, glm::vec2{bo, bo}, true, {0.f, 0.f, 0.f}, glm::vec2{bo, bo});
+    add_side(vertices, glm::vec2{bo, bo}, true, {bo + width * sq, 0.f, 0.f}, glm::vec2{bo, bo});
+    add_side(vertices, glm::vec2{bo, bo}, true, {0.f, 2 * bo + height * sq, 0.f}, glm::vec2{bo, bo});
+    add_side(vertices, glm::vec2{bo, bo}, true, {bo + width * sq, 2 * bo + height * sq, 0.f}, glm::vec2{bo, bo});
 
-    add_side(vertices, glm::vec2{32.f, 32.f}, false, {0.f, 0.f, 0.f}, glm::vec2{32.f, 32.f});
-    add_side(vertices, glm::vec2{32.f, 32.f}, false, {2 * border_size + width * square_size, 0.f, 0.f}, glm::vec2{32.f, 32.f});
-    add_side(vertices, glm::vec2{32.f, 32.f}, false, {0.f, border_size + height * square_size, 0.f}, glm::vec2{32.f, 32.f});
-    add_side(vertices, glm::vec2{32.f, 32.f}, false, {2 * border_size + width * square_size, border_size + height * square_size, 0.f}, glm::vec2{32.f, 32.f});
+    add_side(vertices, glm::vec2{bo, bo}, false, {0.f, 0.f, 0.f}, glm::vec2{bo, bo});
+    add_side(vertices, glm::vec2{bo, bo}, false, {2 * bo + width * sq, 0.f, 0.f}, glm::vec2{bo, bo});
+    add_side(vertices, glm::vec2{bo, bo}, false, {0.f, bo + height * sq, 0.f}, glm::vec2{bo, bo});
+    add_side(vertices, glm::vec2{bo, bo}, false, {2 * bo + width * sq, bo + height * sq, 0.f}, glm::vec2{bo, bo});
 
     // Walls
-    for (uint x = 0; x < width; x++)
+    for (int x = 0; x < width; x++)
     {
-        add_side(vertices, glm::vec2{64.f, 32.f}, true, glm::vec3{border_size + x * square_size, 0.f, 0.f}, glm::vec2{32.f, 64.f});
-        add_side(vertices, glm::vec2{64.f, 32.f}, true, glm::vec3{border_size + x * square_size, 2 * border_size + height * square_size, 0.f}, glm::vec2{32.f, 64.f});
+        add_side(vertices, glm::vec2{sq, bo}, true, glm::vec3{bo + x * sq, 0.f, 0.f}, glm::vec2{bo, sq});
+        add_side(vertices, glm::vec2{sq, bo}, true, glm::vec3{bo + x * sq, 2 * bo + height * sq, 0.f}, glm::vec2{bo, sq});
     }
 
-    for (uint y = 0; y < height; y++)
+    for (int y = 0; y < height; y++)
     {
-        add_side(vertices, glm::vec2{64.f, 32.f}, false, glm::vec3{0.f, border_size + y * square_size, 0.f}, glm::vec2{32.f, 64.f});
-        add_side(vertices, glm::vec2{64.f, 32.f}, false, glm::vec3{2 * border_size + width * square_size, border_size + y * square_size, 0.f}, glm::vec2{32.f, 64.f});
+        add_side(vertices, glm::vec2{sq, bo}, false, glm::vec3{0.f, bo + y * sq, 0.f}, glm::vec2{bo, sq});
+        add_side(vertices, glm::vec2{sq, bo}, false, glm::vec3{2 * bo + width * sq, bo + y * sq, 0.f}, glm::vec2{bo, sq});
     }
 
     m_VBO = std::make_unique<GPU::VertexBuffer>(vertices.data(), vertices.size() * sizeof(float));

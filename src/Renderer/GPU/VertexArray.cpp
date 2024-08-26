@@ -22,6 +22,23 @@ VertexArray::~VertexArray()
 {
     glDeleteVertexArrays(1, &m_id);
 }
+
+VertexArray::VertexArray(VertexArray&& other) : m_id(other.m_id)
+{
+    other.m_id = 0;
+}
+
+auto VertexArray::operator=(VertexArray&& other) -> VertexArray&
+{
+    if (this == &other)
+        return *this;
+    
+    glDeleteVertexArrays(1, &m_id);
+    m_id = other.m_id;
+    other.m_id = 0;
+    
+    return *this;
+}
     
 auto VertexArray::AddBuffer(const VertexBuffer& vb, const VertexBufferLayout& layout) -> void 
 {

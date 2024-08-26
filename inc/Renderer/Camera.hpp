@@ -24,13 +24,7 @@ class Camera
             normal forward = {0.f, 0.f, -1.f},
             normal up = {0.f, 1.f, 0.f}
         ) noexcept;
-        ~Camera() = default;
-
-        Camera(const Camera&) = delete;
-        Camera(Camera&&) = delete;
-        auto operator=(const Camera&) -> Camera& = delete;
-        auto operator=(Camera&&) -> Camera& = delete;
-
+        
         auto move(const vector movement) noexcept -> void;
         auto changeFov(const angle delta) noexcept -> void;
 

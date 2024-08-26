@@ -23,9 +23,9 @@ class VertexArray
         ~VertexArray();
 
         VertexArray(const VertexArray&) = delete;
-        VertexArray(VertexArray&&) = delete;
+        VertexArray(VertexArray&&);
         auto operator=(const VertexArray&) -> VertexArray& = delete;
-        auto operator=(VertexArray&&) -> VertexArray& = delete;
+        auto operator=(VertexArray&&) -> VertexArray&;
 
         auto AddBuffer(const VertexBuffer& vb, const VertexBufferLayout& layout) -> void;
 
