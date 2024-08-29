@@ -196,7 +196,6 @@ auto Renderer::render(const glm::mat4& projView, GLFWwindow* window) const -> vo
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
     // Draw background
     static const UIBox background{"res/textures/background.jpg"};
     background.draw();
@@ -225,14 +224,8 @@ auto Renderer::render(const glm::mat4& projView, GLFWwindow* window) const -> vo
         if (!focused || move.to != *focused)
             draw_rect(projView, move.to, {0.0f, 0.8f, 0.1f, 0.8f});
 
-    // Draw pieces attacking king (for current player)
-    const Chess::Pos king_pos = m_Board.getKingPos(m_Board.getCurrentTurn());
-
-    std::vector<Chess::Pos> attackers;
-    Chess::Player opponent = !m_Board.getCurrentTurn();
-
-    m_Board.getPiecesAttackingPos(king_pos, opponent, attackers);
-    for (const auto& pos : attackers)
+    // Draw pieces attacking king
+    for (const auto& pos : m_Controller.getAttackingPieces())
         draw_rect(projView, pos, {0.8f, 0.0f, 0.1f, 0.8f});
 
     // Draw game over screen

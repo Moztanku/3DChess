@@ -117,21 +117,6 @@ constexpr auto fill_camera_setup_sides(CamSetups& setup, const Chess::Pos board_
     };
 }
 
-template <typename CamSetups>
-auto set_camera(
-    Renderer::Camera& camera,
-    const CamSetups& side,
-    const CamSetups& top,
-    const size_t index,
-    const bool top_view) -> void
-{
-    const auto& setup = top_view ? top[index] : side[index];
-    camera = Renderer::Camera(setup.position, setup.front, setup.up);
-
-    if (!top_view)
-        camera.pitch(30.f);
-}
-
 } // namespace
 
 namespace Controller
@@ -143,21 +128,27 @@ Controller::Controller(Renderer::Camera& camera, Chess::Board& board, GLFWwindow
     m_Window{window}
 {
     m_Keys[GLFW_KEY_Q] = GLFW_RELEASE;
+    m_KeyActions[GLFW_KEY_Q] = Action::PreviousCamera;
+
     m_Keys[GLFW_KEY_E] = GLFW_RELEASE;
+    m_KeyActions[GLFW_KEY_E] = Action::NextCamera;
+    
     m_Keys[GLFW_KEY_R] = GLFW_RELEASE;
+    m_KeyActions[GLFW_KEY_R] = Action::UndoMove;
+
     m_Keys[GLFW_KEY_T] = GLFW_RELEASE;
+    m_KeyActions[GLFW_KEY_T] = Action::ToggleTopView;
+
     m_Keys[GLFW_KEY_A] = GLFW_RELEASE;
+    m_KeyActions[GLFW_KEY_A] = Action::ToggleAutoRotate;
+
     m_Keys[GLFW_KEY_M] = GLFW_RELEASE;
+    m_KeyActions[GLFW_KEY_M] = Action::ResetBoard;
 
     fill_camera_setup_top(m_CameraSetupsTop, m_Board.getSize());
     fill_camera_setup_sides(m_CameraSetupsSide, m_Board.getSize());
 
-    set_camera(
-        m_Camera,
-        m_CameraSetupsSide,
-        m_CameraSetupsTop,
-        m_CameraSetupIndex,
-        m_CameraTopView);
+    update_camera();
 }
 
 auto Controller::update() noexcept -> void
@@ -169,57 +160,26 @@ auto Controller::update() noexcept -> void
     {
 
     }
-    
-    handle_keyboard();
+
     handle_mouse_move();
-    handle_mouse_click();
+    
+    handle_action(handle_keyboard());
+    handle_action(handle_mouse_click());
 }
 
-auto Controller::handle_keyboard() noexcept -> void
+auto Controller::update_camera() noexcept -> void
 {
-    for (auto& [key, state] : m_Keys)
-    {
-        const auto new_state = glfwGetKey(m_Window, key);
+    if (m_CameraAutoRotate)
+        m_CameraSetupIndex = m_Board.getCurrentTurn() == Chess::Player::White ? 0 : 2;
 
-        if (state == new_state)
-            continue;
+    const CameraSetup& setup = m_CameraTopView ?
+        m_CameraSetupsTop[m_CameraSetupIndex] :
+        m_CameraSetupsSide[m_CameraSetupIndex];
 
-        state = new_state;
+    m_Camera = Renderer::Camera(setup.position, setup.front, setup.up);
 
-        if (state == GLFW_RELEASE)
-            continue;
-
-        switch (key)
-        {
-            case GLFW_KEY_Q:
-                m_CameraSetupIndex = (m_CameraSetupIndex - 2) % 4;
-            case GLFW_KEY_E:
-                m_CameraSetupIndex = (m_CameraSetupIndex + 1) % 4;
-                m_CameraTopView = !m_CameraTopView;
-            case GLFW_KEY_T:
-                m_CameraTopView = !m_CameraTopView;
-                
-                set_camera(
-                    m_Camera,
-                    m_CameraSetupsSide,
-                    m_CameraSetupsTop,
-                    m_CameraSetupIndex,
-                    m_CameraTopView);
-                break;
-
-            case GLFW_KEY_R:
-                m_Board.undoMove();
-                break;
-            
-            case GLFW_KEY_A:
-                m_CameraAutoRotate = !m_CameraAutoRotate;
-                break;
-
-            case GLFW_KEY_M:
-                m_Board.reset();
-                break;
-        }
-    }
+    if (!m_CameraTopView)
+        m_Camera.pitch(30.f);
 }
 
 auto Controller::handle_mouse_move() noexcept -> void
@@ -251,63 +211,156 @@ auto Controller::handle_mouse_move() noexcept -> void
         m_FocusedSquare = std::nullopt;
 }
 
-auto Controller::handle_mouse_click() noexcept -> void
+auto Controller::handle_keyboard() noexcept -> Action
+{
+    for (auto& [key, state] : m_Keys)
+    {
+        const auto new_state = glfwGetKey(m_Window, key);
+
+        if (state == new_state)
+            continue;
+
+        state = new_state;
+
+        if (state == GLFW_RELEASE)
+            continue;
+
+        return m_KeyActions[key];
+    }
+
+    return Action::None;
+}
+
+auto Controller::handle_mouse_click() noexcept -> Action
 {
     static KeyState last_state = GLFW_RELEASE;
     KeyState state = glfwGetMouseButton(m_Window, GLFW_MOUSE_BUTTON_LEFT);
 
     if (last_state == state)
-        return;
+        return Action::None;
 
     last_state = state;
 
     if (state == GLFW_RELEASE || !m_FocusedSquare.has_value())
-        return;
+        return Action::None;
 
     if (!m_SelectedSquare.has_value())
-    {
-        m_SelectedSquare = m_FocusedSquare;
-        m_PossibleMoves = m_Board.getPossibleMoves(m_FocusedSquare.value());
-    } else if (m_SelectedSquare == m_FocusedSquare)
-    {
-        m_SelectedSquare = std::nullopt;
-        m_PossibleMoves.clear();
-    } else
-    {
-        auto move = std::find_if(
-            m_PossibleMoves.begin(),
-            m_PossibleMoves.end(),
-            [this](const Chess::Move& move) {
-                return move.to == m_FocusedSquare.value();
-            }
-        );
+        return Action::SelectPiece;
 
-        if (move != m_PossibleMoves.end())
-        {
-            m_Board.executeMove(*move);
+    if (m_SelectedSquare == m_FocusedSquare)
+        return Action::UnselectPiece;
+
+    return Action::MakeMove;
+}
+
+auto Controller::handle_action(Action action) noexcept -> void
+{
+    switch (action)
+    {
+        case Action::PreviousCamera: {
+            m_CameraSetupIndex = (m_CameraSetupIndex + 3) % 4;
+            break;
+        }
+
+        case Action::NextCamera: {
+            m_CameraSetupIndex = (m_CameraSetupIndex + 1) % 4;
+            break;
+        }
+
+        case Action::ToggleTopView: {
+            m_CameraTopView = !m_CameraTopView;
+            break;
+        }
+
+        case Action::ToggleAutoRotate: {
+            m_CameraAutoRotate = !m_CameraAutoRotate;
+            break;
+        }
+
+        case Action::MakeMove: {
+            Chess::Move* move = nullptr;
+
+            for (auto& m : m_PossibleMoves)
+                if (m.to == m_FocusedSquare.value())
+                {
+                    move = &m;
+                    break;
+                }
+
+            if (move)
+            {
+                m_Board.executeMove(*move);
+
+                m_SelectedSquare = std::nullopt;
+                m_PossibleMoves.clear();
+
+                const Chess::Player current_player = m_Board.getCurrentTurn();
+            
+                m_AttackingPieces.clear();
+                m_Board.getPiecesAttackingPos(
+                    m_Board.getKingPos(current_player),
+                    !current_player,
+                    m_AttackingPieces
+                );
+            }
+        }
+
+        case Action::SelectPiece: {
+
+            const auto& pieces = m_Board.getPieces();
+
+            const auto piece = pieces.find(m_FocusedSquare.value());
+
+            if (piece == pieces.end() || piece->second.color != m_Board.getCurrentTurn())
+                break;
+
+            m_SelectedSquare = m_FocusedSquare;
+            m_PossibleMoves = m_Board.getPossibleMoves(m_SelectedSquare.value());
+
+            break;
+        }
+
+        case Action::UnselectPiece: {
 
             m_SelectedSquare = std::nullopt;
             m_PossibleMoves.clear();
 
-            if (m_CameraAutoRotate)
-            {
-                m_CameraSetupIndex = m_Board.getCurrentTurn() == Chess::Player::White ? 0 : 2;
-                set_camera(
-                    m_Camera,
-                    m_CameraSetupsSide,
-                    m_CameraSetupsTop,
-                    m_CameraSetupIndex,
-                    m_CameraTopView);
-            }
-        } else
-        {
-            m_SelectedSquare = m_FocusedSquare;
-            m_PossibleMoves = m_Board.getPossibleMoves(m_FocusedSquare.value());
+            break;
         }
+
+        case Action::UndoMove: {
+
+            m_SelectedSquare = std::nullopt;
+            m_PossibleMoves.clear();
+            m_AttackingPieces.clear();
+
+            m_Board.undoMove();
+
+            Chess::Player current_player = m_Board.getCurrentTurn();
+            m_Board.getPiecesAttackingPos(
+                m_Board.getKingPos(current_player),
+                !current_player,
+                m_AttackingPieces
+            );
+
+            break;
+        }
+
+        case Action::ResetBoard: {
+            m_Board.reset();
+
+            m_SelectedSquare = std::nullopt;
+            m_PossibleMoves.clear();
+            m_AttackingPieces.clear();
+
+            break;
+        }
+
+        default:
+            break;
     }
-    
-    if (m_SelectedSquare.has_value() && m_PossibleMoves.empty())
-        m_SelectedSquare = std::nullopt;
+
+    update_camera();
 }
 
 } // namespace Controller
