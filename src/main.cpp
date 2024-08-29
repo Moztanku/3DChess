@@ -82,8 +82,16 @@ auto init_glad() -> void
 void* func = nullptr;
 void* arg = nullptr;
 
-auto main() -> int
+auto main(int argc, char** argv) -> int
 {
+    if (argc != 1 && argc != 2)
+    {
+        std::cout << "Usage: " << argv[0] << " <path-to-config>\n";
+        std::cout << "  ex.  " << argv[0] << " res/boards/standard.cfg" << std::endl;
+
+        std::exit(EXIT_FAILURE);
+    }
+
     std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)> window{create_window(), glfwDestroyWindow};
     init_glad();
 
@@ -92,7 +100,7 @@ auto main() -> int
         glViewport(0, 0, width, height);
     });
 
-    Chess::Board board{"res/boards/standard.cfg"};
+    Chess::Board board{argc == 2 ? argv[1] : "res/boards/standard.cfg"};
 
     Renderer::Camera camera;
 

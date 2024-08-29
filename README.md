@@ -16,9 +16,24 @@ cd 3DChess
 cmake -S . -B build {-DCMAKE_BUILD_TYPE=Debug/Release}
 cmake --build build
 
-# Run the project
-./build/3DChess
+# Run the project (optionally provide a path to a board config file like res/boards/standard.cfg)
+./build/3DChess {path/to/board/config/file}
 ```
+
+### How to play
+- It's chess.
+- Currently doesn't support AI, so you have to play against yourself or another person.
+- Possible to use custom board configurations, see `res/boards/` for examples.
+- Doesn't implement 50-move rule, 3-fold repetition, or insufficient material draw conditions (yet).
+
+### Controls
+- `Left Mouse Button` - Select/Deselect piece, make move
+- `Q` - Rotate camera left
+- `E` - Rotate camera right
+- `A` - Toggle camera auto-rotate
+- `T` - Toggle top camera view
+- `R` - Undo move
+- `M` - Reset chess board
 
 ### Used Libraries
 - [OpenGL](https://www.opengl.org/)
