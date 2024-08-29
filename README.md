@@ -1,5 +1,7 @@
 # 3DChess
 
+![3DChess gif](https://gitfront.io/r/Moztanku/8s4L1GHF3Tsc/Resources/raw/gifs/3DChess.gif)
+
 ### Requirements
 - C++20 (tested with Clang 18)
 - CMake (tested with 3.30)
