@@ -149,8 +149,8 @@ Controller::Controller(Renderer::Camera& camera, Chess::Board& board, GLFWwindow
     m_Keys[GLFW_KEY_A] = GLFW_RELEASE;
     m_Keys[GLFW_KEY_M] = GLFW_RELEASE;
 
-    fill_camera_setup_top(m_CameraSetupsTop, m_Board.get_size());
-    fill_camera_setup_sides(m_CameraSetupsSide, m_Board.get_size());
+    fill_camera_setup_top(m_CameraSetupsTop, m_Board.getSize());
+    fill_camera_setup_sides(m_CameraSetupsSide, m_Board.getSize());
 
     set_camera(
         m_Camera,
@@ -163,7 +163,7 @@ Controller::Controller(Renderer::Camera& camera, Chess::Board& board, GLFWwindow
 auto Controller::update() noexcept -> void
 {
     glfwPollEvents();
-    GameState state = m_Board.get_current_game_state();
+    GameState state = m_Board.getCurrentGameState();
 
     if (state != GameState::Playing)
     {
@@ -208,7 +208,7 @@ auto Controller::handle_keyboard() noexcept -> void
                 break;
 
             case GLFW_KEY_R:
-                m_Board.undo_move();
+                m_Board.undoMove();
                 break;
             
             case GLFW_KEY_A:
@@ -245,7 +245,7 @@ auto Controller::handle_mouse_move() noexcept -> void
         std::floorf((intersection.y - border_size) / square_size)  
     };
 
-    if (Chess::in_bounds(pos, m_Board.get_size()))
+    if (Chess::in_bounds(pos, m_Board.getSize()))
         m_FocusedSquare = pos;
     else
         m_FocusedSquare = std::nullopt;
@@ -267,7 +267,7 @@ auto Controller::handle_mouse_click() noexcept -> void
     if (!m_SelectedSquare.has_value())
     {
         m_SelectedSquare = m_FocusedSquare;
-        m_PossibleMoves = m_Board.get_possible_moves(m_FocusedSquare.value());
+        m_PossibleMoves = m_Board.getPossibleMoves(m_FocusedSquare.value());
     } else if (m_SelectedSquare == m_FocusedSquare)
     {
         m_SelectedSquare = std::nullopt;
@@ -284,14 +284,14 @@ auto Controller::handle_mouse_click() noexcept -> void
 
         if (move != m_PossibleMoves.end())
         {
-            m_Board.execute_move(*move);
+            m_Board.executeMove(*move);
 
             m_SelectedSquare = std::nullopt;
             m_PossibleMoves.clear();
 
             if (m_CameraAutoRotate)
             {
-                m_CameraSetupIndex = m_Board.get_current_turn() == Chess::Player::White ? 0 : 2;
+                m_CameraSetupIndex = m_Board.getCurrentTurn() == Chess::Player::White ? 0 : 2;
                 set_camera(
                     m_Camera,
                     m_CameraSetupsSide,
@@ -302,7 +302,7 @@ auto Controller::handle_mouse_click() noexcept -> void
         } else
         {
             m_SelectedSquare = m_FocusedSquare;
-            m_PossibleMoves = m_Board.get_possible_moves(m_FocusedSquare.value());
+            m_PossibleMoves = m_Board.getPossibleMoves(m_FocusedSquare.value());
         }
     }
     

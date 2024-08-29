@@ -26,9 +26,9 @@ class Controller
         Controller(Renderer::Camera& camera, Chess::Board& board, GLFWwindow* window) noexcept;
         auto update() noexcept -> void;
 
-        auto get_focus() const noexcept -> const std::optional<Chess::Pos>& { return m_FocusedSquare; }
-        auto get_selected() const noexcept -> const std::optional<Chess::Pos>& { return m_SelectedSquare; }
-        auto get_moves() const noexcept -> const std::vector<Chess::Move>& { return m_PossibleMoves; }
+        auto getFocusedPiece() const noexcept -> const std::optional<Chess::Pos>& { return m_FocusedSquare; }
+        auto getSelectedPiece() const noexcept -> const std::optional<Chess::Pos>& { return m_SelectedSquare; }
+        auto getPossibleMoves() const noexcept -> const std::vector<Chess::Move>& { return m_PossibleMoves; }
     private:
         Renderer::Camera& m_Camera;
         Chess::Board& m_Board;

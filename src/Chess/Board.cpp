@@ -179,50 +179,50 @@ namespace Chess
 
 Board::Board(const std::string_view config_file)
 {
-    parse_config(config_file, m_width, m_height, m_starting_player, m_pieces);
+    parse_config(config_file, m_Width, m_Height, m_StartingPlayer, m_Pieces);
 
-    m_KingWhitePos = find_king(m_pieces, Player::White);
-    m_KingBlackPos = find_king(m_pieces, Player::Black);
+    m_KingWhite = find_king(m_Pieces, Player::White);
+    m_KingBlack = find_king(m_Pieces, Player::Black);
 
     update();
 }
 
-auto Board::get_size() const -> Pos
+auto Board::getSize() const -> Pos
 {
-    return Pos{m_width, m_height};
+    return Pos{m_Width, m_Height};
 }
 
-auto Board::get_pieces() const -> const PieceMap&
+auto Board::getPieces() const -> const PieceMap&
 {
-    return m_pieces;
+    return m_Pieces;
 }
 
-auto Board::get_king_pos(const Player color) const -> Pos
+auto Board::getKingPos(const Player color) const -> Pos
 {
-    return color == Player::White ? m_KingWhitePos : m_KingBlackPos;
+    return color == Player::White ? m_KingWhite : m_KingBlack;
 }
 
-auto Board::get_current_turn() const -> Player
+auto Board::getCurrentTurn() const -> Player
 {
-    if (m_move_history.empty())
-        return m_starting_player;
+    if (m_MoveHistory.empty())
+        return m_StartingPlayer;
     
-    return !m_move_history.back().player;
+    return !m_MoveHistory.back().player;
 }
 
-auto Board::get_possible_moves(const Pos from) const -> std::vector<Move>
+auto Board::getPossibleMoves(const Pos from) const -> std::vector<Move>
 {
-    auto piece = find_piece(m_pieces, from);
+    auto piece = find_piece(m_Pieces, from);
 
     if (piece == std::nullopt)
         return {};
 
-    if (piece->color != get_current_turn())
+    if (piece->color != getCurrentTurn())
         return {};
 
     std::vector<Move> moves;
 
-    for (const auto& to : m_possible_moves.at(from))
+    for (const auto& to : m_PossibleMoves.at(from))
         moves.push_back(
             create_move(from, to)
         );
@@ -231,9 +231,9 @@ auto Board::get_possible_moves(const Pos from) const -> std::vector<Move>
 }
 
 
-auto Board::get_pieces_atacking_pos(const Pos pos, const Player color, std::vector<Pos>& attackers) const -> void
+auto Board::getPiecesAttackingPos(const Pos pos, const Player color, std::vector<Pos>& attackers) const -> void
 {
-    for (const auto& [piece_pos, piece] : m_pieces)
+    for (const auto& [piece_pos, piece] : m_Pieces)
     {
         if (piece.color != color)
             continue;
@@ -245,9 +245,9 @@ auto Board::get_pieces_atacking_pos(const Pos pos, const Player color, std::vect
     }
 }
 
-auto Board::check_if_attacking_pos(const Pos pos, const Player color) const -> bool
+auto Board::checkIfAttackingPos(const Pos pos, const Player color) const -> bool
 {
-    for (const auto& [piece_pos, piece] : m_pieces)
+    for (const auto& [piece_pos, piece] : m_Pieces)
     {
         if (piece.color != color)
             continue;
@@ -261,14 +261,14 @@ auto Board::check_if_attacking_pos(const Pos pos, const Player color) const -> b
     return false;
 }
 
-auto Board::execute_move(const Move& move) -> void
+auto Board::executeMove(const Move& move) -> void
 {
 
     execute(move);
     update();
 }
 
-auto Board::undo_move() -> Move
+auto Board::undoMove() -> Move
 {
     auto move = undo();
     update();
@@ -276,18 +276,18 @@ auto Board::undo_move() -> Move
     return move;
 }
 
-auto Board::get_current_game_state() const -> Controller::GameState
+auto Board::getCurrentGameState() const -> Controller::GameState
 {
-    if (m_move_history.empty())
+    if (m_MoveHistory.empty())
         return Controller::GameState::Playing;
 
-    const auto& last_move = m_move_history.back();
+    const auto& last_move = m_MoveHistory.back();
 
-    if (last_move.is_type(Move::Type::Checkmate))
+    if (last_move.isType(Move::Type::Checkmate))
         return last_move.player == Player::White ?
             Controller::GameState::WhiteWin : Controller::GameState::BlackWin;
 
-    if (last_move.is_type(Move::Type::Stalemate))
+    if (last_move.isType(Move::Type::Stalemate))
         return Controller::GameState::Draw;
 
     return Controller::GameState::Playing;
@@ -295,7 +295,7 @@ auto Board::get_current_game_state() const -> Controller::GameState
 
 auto Board::reset() -> void
 {
-    while(!m_move_history.empty())
+    while(!m_MoveHistory.empty())
         undo();
 
     update();
@@ -305,28 +305,28 @@ auto Board::reset() -> void
 
 auto Board::update() -> void
 {
-    if (m_move_history.empty())
+    if (m_MoveHistory.empty())
         return calculate_possible_moves_initial();
 
-    calculate_possible_moves(m_move_history.back());
+    calculate_possible_moves(m_MoveHistory.back());
 
-    auto& last_move = m_move_history.back();
+    auto& last_move = m_MoveHistory.back();
 
-    const std::vector<Pos>& moves = m_possible_moves.at(last_move.to);
+    const std::vector<Pos>& moves = m_PossibleMoves.at(last_move.to);
 
     // Add info about check to the move
     if (std::find(moves.begin(), moves.end(),
-        get_king_pos(!last_move.player)) != moves.end())
+        getKingPos(!last_move.player)) != moves.end())
     {
         last_move.type |= static_cast<uint>(Move::Type::Check);
     }
 
     // Add info about checkmate/stalemate to the move
-    Player current = get_current_turn();
+    Player current = getCurrentTurn();
     bool no_moves = true;
 
-    for (const auto& [pos, moves] : m_possible_moves)
-        if (m_pieces.at(pos).color == current && !moves.empty())
+    for (const auto& [pos, moves] : m_PossibleMoves)
+        if (m_Pieces.at(pos).color == current && !moves.empty())
         {
             no_moves = false;
             break;
@@ -334,7 +334,7 @@ auto Board::update() -> void
 
     if (no_moves)
     {
-        if (last_move.is_type(Move::Type::Check))
+        if (last_move.isType(Move::Type::Check))
             last_move.type |= static_cast<uint>(Move::Type::Checkmate);
         else
             last_move.type |= static_cast<uint>(Move::Type::Stalemate);
@@ -343,24 +343,24 @@ auto Board::update() -> void
 
 auto Board::execute(const Move& move) -> void
 {
-    m_move_history.push_back(move);
+    m_MoveHistory.push_back(move);
 
-    m_pieces[move.to] = m_pieces[move.from];
-    m_pieces[move.to].moved = true;
+    m_Pieces[move.to] = m_Pieces[move.from];
+    m_Pieces[move.to].moved = true;
 
-    if (m_pieces[move.to].type == Piece::Type::King)
+    if (m_Pieces[move.to].type == Piece::Type::King)
     {
-        if (m_pieces[move.to].color == Player::White)
-            m_KingWhitePos = move.to;
+        if (m_Pieces[move.to].color == Player::White)
+            m_KingWhite = move.to;
         else
-            m_KingBlackPos = move.to;
+            m_KingBlack = move.to;
     }
 
-    m_pieces.erase(move.from);
+    m_Pieces.erase(move.from);
 
-    auto it = move.special_move_info.data();
+    auto it = move.specialMoveInfo.data();
 
-    if (move.is_type(Move::Type::Capture))
+    if (move.isType(Move::Type::Capture))
     {
         const Pos cap_pos = *reinterpret_cast<const Pos*>(it);
         it += sizeof(cap_pos);
@@ -369,18 +369,18 @@ auto Board::execute(const Move& move) -> void
         it += sizeof(cap_piece);
 
         if (cap_pos != move.to)
-            m_pieces.erase(cap_pos);
+            m_Pieces.erase(cap_pos);
     }
 
-    if (move.is_type(Move::Type::Promotion))
+    if (move.isType(Move::Type::Promotion))
     {
         const Piece::Type promoted = *reinterpret_cast<const Piece::Type*>(it);
         it += sizeof(promoted);
 
-        m_pieces[move.to].type = promoted;
+        m_Pieces[move.to].type = promoted;
     }
 
-    if (move.is_type(Move::Type::Castling))
+    if (move.isType(Move::Type::Castling))
     {
         const Pos rook_from = *reinterpret_cast<const Pos*>(it);
         it += sizeof(rook_from);
@@ -388,38 +388,38 @@ auto Board::execute(const Move& move) -> void
         const Pos rook_to = *reinterpret_cast<const Pos*>(it);
         it += sizeof(rook_to);
 
-        m_pieces[rook_to] = m_pieces[rook_from];
-        m_pieces[rook_to].moved = true;
+        m_Pieces[rook_to] = m_Pieces[rook_from];
+        m_Pieces[rook_to].moved = true;
 
-        m_pieces.erase(rook_from);
+        m_Pieces.erase(rook_from);
     }
 }
 
 auto Board::undo() -> Move
 {
-    if (m_move_history.empty())
+    if (m_MoveHistory.empty())
     {
         std::cerr << "No moves to undo!" << std::endl;
         return Move{};
     }
 
-    const Move move = m_move_history.back();
-    m_move_history.pop_back();
+    const Move move = m_MoveHistory.back();
+    m_MoveHistory.pop_back();
 
-    m_pieces[move.from] = m_pieces[move.to];
-    m_pieces.erase(move.to);
+    m_Pieces[move.from] = m_Pieces[move.to];
+    m_Pieces.erase(move.to);
 
-    if (m_pieces[move.from].type == Piece::Type::King)
+    if (m_Pieces[move.from].type == Piece::Type::King)
     {
-        if (m_pieces[move.from].color == Player::White)
-            m_KingWhitePos = move.from;
+        if (m_Pieces[move.from].color == Player::White)
+            m_KingWhite = move.from;
         else
-            m_KingBlackPos = move.from;
+            m_KingBlack = move.from;
     }
 
-    auto it = move.special_move_info.data();
+    auto it = move.specialMoveInfo.data();
 
-    if (move.is_type(Move::Type::Capture))
+    if (move.isType(Move::Type::Capture))
     {
         const Pos cap_pos = *reinterpret_cast<const Pos*>(it);
         it += sizeof(cap_pos);
@@ -427,15 +427,15 @@ auto Board::undo() -> Move
         const Piece cap_piece = *reinterpret_cast<const Piece*>(it);
         it += sizeof(cap_piece);
 
-        m_pieces[cap_pos] = cap_piece;
+        m_Pieces[cap_pos] = cap_piece;
     }
 
-    if (move.is_type(Move::Type::Promotion))
+    if (move.isType(Move::Type::Promotion))
     {
-        m_pieces[move.from].type = Piece::Type::Pawn;
+        m_Pieces[move.from].type = Piece::Type::Pawn;
     }
 
-    if (move.is_type(Move::Type::Castling))
+    if (move.isType(Move::Type::Castling))
     {
         const Pos rook_from = *reinterpret_cast<const Pos*>(it);
         it += sizeof(rook_from);
@@ -443,17 +443,17 @@ auto Board::undo() -> Move
         const Pos rook_to = *reinterpret_cast<const Pos*>(it);
         it += sizeof(rook_to);
 
-        m_pieces[rook_from] = m_pieces[rook_to];
-        m_pieces[rook_from].moved = false;
+        m_Pieces[rook_from] = m_Pieces[rook_to];
+        m_Pieces[rook_from].moved = false;
 
         // Check in case if kings initial position is 1 square away from rook
         if (rook_to != move.from)
-            m_pieces.erase(rook_to);
+            m_Pieces.erase(rook_to);
     }
 
-    if (move.is_type(Move::Type::FirstMove))
+    if (move.isType(Move::Type::FirstMove))
     {
-        m_pieces[move.from].moved = false;
+        m_Pieces[move.from].moved = false;
     }
 
     return move;
@@ -461,22 +461,22 @@ auto Board::undo() -> Move
 
 auto Board::create_move(const Pos from, const Pos to, const std::optional<Piece::Type> promotion) const -> Move
 {
-    if (m_pieces.find(from) == m_pieces.end())
+    if (m_Pieces.find(from) == m_Pieces.end())
         return Move{};
 
-    const Piece piece = m_pieces.at(from);
+    const Piece piece = m_Pieces.at(from);
 
     uint8_t type {static_cast<uint8_t>(Move::Type::Empty)};
     Move::SpecialMoveInfo sm_info{};
 
-    auto captured = find_piece(m_pieces, to);
+    auto captured = find_piece(m_Pieces, to);
 
     // En passant
     if (piece.type == Piece::Type::Pawn && captured == std::nullopt && to.x != from.x)
     {
         type |= static_cast<uint>(Move::Type::EnPassant);
 
-        captured = find_piece(m_pieces, Pos{to.x, from.y});
+        captured = find_piece(m_Pieces, Pos{to.x, from.y});
     }
 
     // Capture
@@ -495,7 +495,7 @@ auto Board::create_move(const Pos from, const Pos to, const std::optional<Piece:
     // Promotion
     if (piece.type == Piece::Type::Pawn)
     {
-        if ((piece.color == Player::White && to.y == get_size().y - 1) || (piece.color == Player::Black && to.y == 0))
+        if ((piece.color == Player::White && to.y == getSize().y - 1) || (piece.color == Player::Black && to.y == 0))
         {
             type |= static_cast<uint>(Move::Type::Promotion);
 
@@ -515,7 +515,7 @@ auto Board::create_move(const Pos from, const Pos to, const std::optional<Piece:
             Pos rook_to = to - Pos{dir, 0};
             Pos rook_from = to;
 
-            while(find_piece(m_pieces, rook_from) == std::nullopt)
+            while(find_piece(m_Pieces, rook_from) == std::nullopt)
                 rook_from += Pos{dir, 0};
 
             append_data(sm_info, rook_from);
@@ -535,7 +535,7 @@ auto Board::create_move(const Pos from, const Pos to, const std::optional<Piece:
         .to = to,
         .piece = piece.type,
         .type = type,
-        .special_move_info = sm_info
+        .specialMoveInfo = sm_info
     };
 }
 
@@ -547,16 +547,16 @@ auto Board::calculate_possible_moves(const Move& /* move */) -> void
 
 auto Board::calculate_possible_moves_initial() -> void
 {
-    m_possible_moves.clear();
+    m_PossibleMoves.clear();
 
     // Get all moves a piece can make
-    for (const auto& [pos, piece] : m_pieces)
-        m_possible_moves[pos] = get_moves(pos);
+    for (const auto& [pos, piece] : m_Pieces)
+        m_PossibleMoves[pos] = get_moves(pos);
 
     // Filter out moves that would put the king in check
-    for (auto& [pos, moves] : m_possible_moves)
+    for (auto& [pos, moves] : m_PossibleMoves)
     {
-        const Piece piece = m_pieces.at(pos);
+        const Piece piece = m_Pieces.at(pos);
 
         auto it = moves.begin();
 
@@ -566,9 +566,9 @@ auto Board::calculate_possible_moves_initial() -> void
 
             execute(move);
 
-            const Pos king_pos = get_king_pos(piece.color);
+            const Pos king_pos = getKingPos(piece.color);
 
-            if (check_if_attacking_pos(king_pos, !piece.color))
+            if (checkIfAttackingPos(king_pos, !piece.color))
                 it = moves.erase(it);
             else
                 ++it;

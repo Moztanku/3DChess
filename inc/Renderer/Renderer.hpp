@@ -21,11 +21,11 @@ class Renderer
 
         auto render(const glm::mat4& projView, GLFWwindow* window) const -> void;
     private:
-        const Chess::Board& m_board;
-        const Controller::Controller& m_controller;
+        const Chess::Board& m_Board;
+        const Controller::Controller& m_Controller;
 
         // turn into a Mesh class
-        const std::unique_ptr<Chessboard> m_board_mesh;
+        const std::unique_ptr<Chessboard> m_BoardMesh;
 };
 
 } // namespace Renderer

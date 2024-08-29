@@ -215,7 +215,7 @@ Chessboard::Chessboard(Chess::Pos size)
 }
 
 // Renders the chessboard with the given MVP matrix
-auto Chessboard::render(const glm::mat4& MVP) -> void
+auto Chessboard::draw(const glm::mat4& MVP) -> void
 {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

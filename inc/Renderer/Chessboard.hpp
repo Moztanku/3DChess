@@ -22,7 +22,7 @@ class Chessboard
     public:
         Chessboard(Chess::Pos size);
 
-        auto render(const glm::mat4& MVP) -> void;
+        auto draw(const glm::mat4& MVP) -> void;
     private:
         GPU::Shader m_Shader{"res/shaders/chessboard.vert", "res/shaders/chessboard.frag"};
         GPU::Texture m_Texture{"res/textures/chessboard.png"};

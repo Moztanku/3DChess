@@ -40,7 +40,7 @@ class Mesh
             setup_mesh(scene);
         }
 
-        auto Draw() const -> void
+        auto draw() const -> void
         {
             m_VAO->Bind();
             m_IBO->Bind();

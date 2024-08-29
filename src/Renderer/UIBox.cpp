@@ -50,12 +50,12 @@ namespace Renderer
 UIBox::UIBox(const std::string_view tex_path) : m_Texture{tex_path}
 {}
 
-auto UIBox::Draw() const -> void
+auto UIBox::draw() const -> void
 {
-    Draw(Settings{});
+    draw(Settings{});
 }
 
-auto UIBox::Draw(const Settings& settings) const -> void
+auto UIBox::draw(const Settings& settings) const -> void
 {
     static GPU::Shader shader {
         "res/shaders/ui_box.vert",

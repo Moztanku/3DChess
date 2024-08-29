@@ -6,7 +6,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Renderer/UIBox.hpp"
-#include "Renderer/Background.hpp"
 #include "Renderer/GPU/Shader.hpp"
 #include "Chess/Piece.hpp"
 #include "Common.hpp"
@@ -84,7 +83,7 @@ auto draw_piece(
     piece_shader.SetUniformM("uModel", model);
     piece_shader.SetUniformM("uMVP", projView * model);
 
-    get_mesh(piece.type).Draw();
+    get_mesh(piece.type).draw();
 
     piece_shader.Unbind();
 }
@@ -173,7 +172,7 @@ auto draw_game_over_screen(const Controller::GameState state, const float alpha)
         state == GameState::WhiteWin ? &white_won :
         &black_won;
 
-    box->Draw({
+    box->draw({
         .position = {.1f, .1f},
         .size = {0.8f, 0.8f},
         .alpha = alpha
@@ -186,9 +185,9 @@ namespace Renderer
 {
 
 Renderer::Renderer(const Chess::Board& board, const Controller::Controller& controller)
-    : m_board{board},
-    m_controller{controller},
-    m_board_mesh{std::make_unique<Chessboard>(board.get_size())}
+    : m_Board{board},
+    m_Controller{controller},
+    m_BoardMesh{std::make_unique<Chessboard>(board.getSize())}
 {
     glEnable(GL_DEPTH_TEST);
 }
@@ -200,39 +199,39 @@ auto Renderer::render(const glm::mat4& projView, GLFWwindow* window) const -> vo
 
     // Draw background
     static const UIBox background{"res/textures/background.jpg"};
-    background.Draw();
+    background.draw();
 
     // Draw chessboard
-    m_board_mesh->render(projView);
+    m_BoardMesh->draw(projView);
 
     // Draw pieces
-    for (const auto& [pos, piece] : m_board.get_pieces())
+    for (const auto& [pos, piece] : m_Board.getPieces())
         draw_piece(projView, pos, piece);
 
     // Draw focused square
-    const std::optional<Chess::Pos>& focused = m_controller.get_focus();
+    const std::optional<Chess::Pos>& focused = m_Controller.getFocusedPiece();
 
     if (focused)
         draw_rect(projView, *focused, {0.1f, 0.9f, 0.1f, 1.0f});
 
     // Draw selected square
-    const std::optional<Chess::Pos>& selected = m_controller.get_selected();
+    const std::optional<Chess::Pos>& selected = m_Controller.getSelectedPiece();
 
     if (selected && (!focused || *selected != *focused))
         draw_rect(projView, *selected, {0.9f, 1.0f, 0.0f, 0.8f});
 
     // Draw possible moves
-    for (const auto& move : m_controller.get_moves())
+    for (const auto& move : m_Controller.getPossibleMoves())
         if (!focused || move.to != *focused)
             draw_rect(projView, move.to, {0.0f, 0.8f, 0.1f, 0.8f});
 
     // Draw pieces attacking king (for current player)
-    const Chess::Pos king_pos = m_board.get_king_pos(m_board.get_current_turn());
+    const Chess::Pos king_pos = m_Board.getKingPos(m_Board.getCurrentTurn());
 
     std::vector<Chess::Pos> attackers;
-    Chess::Player opponent = !m_board.get_current_turn();
+    Chess::Player opponent = !m_Board.getCurrentTurn();
 
-    m_board.get_pieces_atacking_pos(king_pos, opponent, attackers);
+    m_Board.getPiecesAttackingPos(king_pos, opponent, attackers);
     for (const auto& pos : attackers)
         draw_rect(projView, pos, {0.8f, 0.0f, 0.1f, 0.8f});
 
@@ -241,7 +240,7 @@ auto Renderer::render(const glm::mat4& projView, GLFWwindow* window) const -> vo
     static double game_over_timer = 0.0;
 
     using Controller::GameState;
-    const GameState state = m_board.get_current_game_state();
+    const GameState state = m_Board.getCurrentGameState();
 
     if (state != GameState::Playing)
     {

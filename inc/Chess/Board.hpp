@@ -24,33 +24,31 @@ class Board
             
         Board(const std::string_view layout_file);
 
-        auto get_size() const -> Pos;
-        auto get_pieces() const -> const PieceMap&;
-        auto get_king_pos(Player color) const -> Pos;
-        auto get_current_turn() const -> Player;
-        auto get_possible_moves(const Pos from) const -> std::vector<Move>;
-        auto get_pieces_atacking_pos(const Pos pos, const Player color, std::vector<Pos>& attackers) const -> void;
-        auto check_if_attacking_pos(const Pos pos, const Player color) const -> bool;
-        auto get_current_game_state() const -> Controller::GameState;
+        auto getSize() const -> Pos;
+        auto getPieces() const -> const PieceMap&;
+        auto getKingPos(Player color) const -> Pos;
+        auto getCurrentTurn() const -> Player;
+        auto getPossibleMoves(const Pos from) const -> std::vector<Move>;
+        auto getPiecesAttackingPos(const Pos pos, const Player color, std::vector<Pos>& attackers) const -> void;
+        auto getCurrentGameState() const -> Controller::GameState;
 
-        auto execute_move(const Move& move) -> void;
-        auto undo_move() -> Move;
+        auto checkIfAttackingPos(const Pos pos, const Player color) const -> bool;
+
+        auto executeMove(const Move& move) -> void;
+        auto undoMove() -> Move;
         auto reset() -> void;
     private:
-        PieceMap m_pieces;
-        MoveMap m_possible_moves;
-        MoveList m_move_history;
+        PieceMap m_Pieces;
+        MoveMap m_PossibleMoves;
+        MoveList m_MoveHistory;
 
-        Pos m_KingWhitePos{-1,-1};
-        Pos m_KingBlackPos{-1,-1};
-
-        // // TODO: Change chessboard class into a Mesh class
-        // Renderer::Chessboard* m_chessboard;
+        Pos m_KingWhite{-1,-1};
+        Pos m_KingBlack{-1,-1};
         
         // Board dimensions, pseudo-constants as they are set in the constructor
-        Player m_starting_player{Player::White};
-        uint m_width;
-        uint m_height;
+        Player m_StartingPlayer{Player::White};
+        uint m_Width;
+        uint m_Height;
 
         auto update() -> void;
 

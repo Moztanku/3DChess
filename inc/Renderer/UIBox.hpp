@@ -22,8 +22,8 @@ class UIBox
 
         UIBox(const std::string_view tex_path);
 
-        auto Draw() const -> void;
-        auto Draw(const Settings& settings) const -> void;
+        auto draw() const -> void;
+        auto draw(const Settings& settings) const -> void;
     private:
         const GPU::Texture m_Texture;
 }; // class UIBox
